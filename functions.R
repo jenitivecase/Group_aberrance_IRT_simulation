@@ -57,18 +57,30 @@ two_yr_ability_sim <- function(N_people, theta_mean, theta_sd,
   
   #year 2
   cheat_groups <- c((N_groups - n_cheat):N_groups)
-  yr2_abilities <- vector("list", N_groups)
   
   yr2_groups <- yr1_groups
-  group_init <- 1
-  while(sum(group_init) != N_people){
-    group_init <- round(rtruncnorm(n = N_groups, a = groupsize_min, 
-                                   b = groupsize_max, 
-                                   mean = 20, sd = 5))
-  }
-  yr2_groups$size <- group_init
-  yr2_groups$ability_mean <- yr2_groups$ability_mean + rnorm(N_groups, mean_increase, 0.01)
+  # group_init <- 1
+  # while(sum(group_init) != N_people){
+  #   group_init <- round(rtruncnorm(n = N_groups, a = groupsize_min, 
+  #                                  b = groupsize_max, 
+  #                                  mean = 20, sd = 5))
+  # }
+  # yr2_groups$size <- group_init
+  yr2_groups$ability_mean <- yr2_groups$ability_mean + rnorm(N_groups, mean_increase, 0.1)
   
+  yr2_groups[which(yr2_groups$id %in% cheat_groups), "ability_mean"] <- 
+    yr2_groups[which(yr2_groups$id %in% cheat_groups), "ability_mean"] + 
+    rnorm(length(cheat_groups), cheat_eff, 0.1)
+  
+  
+  yr2_abilities <- vector("list", N_groups)
+  for(i in 1:nrow(yr2_groups)){
+    yr2_abilities[[i]] <- members_sim(yr2_groups[i, "size"], yr2_groups[i, "id"], 
+                                      yr2_groups[i, "ability_mean"])
+  }
+  
+  yr2_abilities <- do.call(rbind, yr2_abilities)
+  yr2_abilities <- arrange(yr2_abilities, desc(studentid))
 
   
   return(list(yr1_ability_scores, yr2_ability_scores))
