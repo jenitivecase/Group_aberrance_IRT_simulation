@@ -13,13 +13,17 @@ item_sim <- function(n_items, b_mean, b_sd, a_min, a_max){
 }
 
 #simulate a set of people's ability scores
-ability_sim <- function(N_people, theta_mean, theta_sd,
-                        N_groups, groupsize_min, groupsize_max){
-  ability_scores <- matrix(NA, nrow = N_people, ncol = 3)
-  colnames(ability_scores) <- c("theta", "group1", "group2")
+two_yr_ability_sim <- function(N_people, theta_mean, theta_sd,
+                        N_groups, groupsize_min, groupsize_max,
+                        mean_increase, yr_corr, n_cheat, cheat_eff){
+  #df setup
+  yr1_ability_scores <- data.frame(matrix(NA, nrow = N_people, ncol = 3))
+  yr2_ability_scores <- data.frame(matrix(NA, nrow = N_people, ncol = 3))
   
-  ability_scores[,"theta"] <- rnorm(N_people, theta_mean, theta_sd)
+  colnames(yr1_ability_scores) <- c("theta", "group")
+  colnames(yr2_ability_scores) <- c("theta", "group")
   
+  #group sim
   group_init <- 1
   while(sum(group_init) != N_people){
     group_init <- round(rtruncnorm(n = N_groups, a = groupsize_min, 
@@ -27,11 +31,22 @@ ability_sim <- function(N_people, theta_mean, theta_sd,
                                    mean = 20, sd = 5))
   }
   
-  ability_scores[,"group1"] <- group_init
-
-  ability_scores[,"group2"] <- group_init[sample(length(group_init), length(group_init))]
+  yr1_ability_scores[,"group"] <- group_init
   
-  return(ability_scores)
+  yr2_ability_scores[,"group"] <- group_init[sample(length(group_init), length(group_init))]
+  
+  cheat_groups <- c((N_groups - n_cheat):N_groups)
+  
+  #ability sim
+  yr1_ability_scores[,"ability"] <- rnorm(N_people, theta_mean, theta_sd)
+  
+  yr1_input <- yr1_ability_scores[,"ability"] * yr_corr
+  overall_increase <- rnorm(N_people, mean_increase, 0.01)
+  
+  yr2_ability_scores[,"ability"] <- yr1_input + overall_increase + 
+    rnorm(N_people, 1, 0)
+  
+  return(list(yr1_ability_scores, yr2_ability_scores))
 }
 
 #get the responses for a single item
