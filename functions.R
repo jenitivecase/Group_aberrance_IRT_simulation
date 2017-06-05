@@ -20,9 +20,12 @@ ability_sim <- function(N_people, theta_mean, theta_sd,
   
   ability_scores[,"theta"] <- rnorm(N_people, theta_mean, theta_sd)
   
-  group_init <- round(rtruncnorm(n = N_groups, a = groupsize_min, 
-                                 b = groupsize_max, 
-                                 mean = 20, sd = 5))
+  group_init <- 1
+  while(sum(group_init) != N_people){
+    group_init <- round(rtruncnorm(n = N_groups, a = groupsize_min, 
+                                   b = groupsize_max, 
+                                   mean = 20, sd = 5))
+  }
   
   ability_scores[,"group1"] <- group_init
 
