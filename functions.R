@@ -29,7 +29,7 @@ group_sim <- function(N_groups, groupsize_min, groupsize_max,
 }
 
 members_sim <- function(size, id, ability_mean){
-  person_mat <- data.frame(matrix(NA, nrow = size, ncol = 2))
+  person_mat <- data.frame(matrix(NA, nrow = size, ncol = 3))
   names(person_mat) <- c("ability", "groupid")
   person_mat$groupid <- id
   person_mat$ability <- rnorm(size, ability_mean, group_sd)
@@ -41,26 +41,35 @@ two_yr_ability_sim <- function(N_people, theta_mean, theta_sd,
                         N_groups, groupsize_min, groupsize_max, group_sd,
                         mean_increase, yr_corr, n_cheat, cheat_eff){
   
-  groups <- group_sim(N_groups, groupsize_min, groupsize_max,
+  #year 1
+  yr1_groups <- group_sim(N_groups, groupsize_min, groupsize_max,
                       theta_mean, theta_sd)
   
   yr1_abilities <- vector("list", N_groups)
-  for(i in 1:nrow(groups)){
-    yr1_abilities[[i]] <- members_sim(groups[i, "size"], groups[i, "id"], groups[i, "ability_mean"])
+  for(i in 1:nrow(yr1_groups)){
+    yr1_abilities[[i]] <- members_sim(yr1_groups[i, "size"], yr1_groups[i, "id"], 
+                                      yr1_groups[i, "ability_mean"])
   }
   
   yr1_abilities <- do.call(rbind, yr1_abilities)
+  yr1_abilities$studentid <- c(1:nrow(yr1_abilities))
   
+  
+  #year 2
   cheat_groups <- c((N_groups - n_cheat):N_groups)
+  yr2_abilities <- vector("list", N_groups)
   
-  #ability sim
-  yr1_ability_scores[,"ability"] <- rnorm(N_people, theta_mean, theta_sd)
+  yr2_groups <- yr1_groups
+  group_init <- 1
+  while(sum(group_init) != N_people){
+    group_init <- round(rtruncnorm(n = N_groups, a = groupsize_min, 
+                                   b = groupsize_max, 
+                                   mean = 20, sd = 5))
+  }
+  yr2_groups$size <- group_init
+  yr2_groups$ability_mean <- yr2_groups$ability_mean + rnorm(N_groups, mean_increase, 0.01)
   
-  yr1_input <- yr1_ability_scores[,"ability"] * yr_corr
-  overall_increase <- rnorm(N_people, mean_increase, 0.01)
-  
-  yr2_ability_scores[,"ability"] <- yr1_input + overall_increase + 
-    rnorm(N_people, 1, 0)
+
   
   return(list(yr1_ability_scores, yr2_ability_scores))
 }
