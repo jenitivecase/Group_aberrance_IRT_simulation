@@ -32,8 +32,6 @@ group_sim <- function(N_groups, groupsize_min, groupsize_max,
 two_yr_ability_sim <- function(N_people, theta_mean, theta_sd,
                         N_groups, groupsize_min, groupsize_max, group_sd,
                         mean_increase, yr_corr, n_cheat, cheat_eff){
-  
-  
   person_data <- data.frame(matrix(NA, nrow = N_people, ncol = 4))
   names(person_data) <- c("studentid", "groupid", 
                           "yr1_ability", "yr2_ability")
@@ -51,7 +49,7 @@ two_yr_ability_sim <- function(N_people, theta_mean, theta_sd,
 
   for(i in 1:nrow(person_data)){
     group_inc <- rnorm(1, 
-                       groups[which(groups$id == person_data[i]), "ability_inc"],
+                       groups[which(groups$id == person_data[i, "groupid"]), "ability_inc"],
                        0.1)
     cheat_inc <- ifelse(person_data[i, "groupid"] %in% cheat_groups, 
                         rnorm(1, cheat_eff, 0.1), 
@@ -61,6 +59,8 @@ two_yr_ability_sim <- function(N_people, theta_mean, theta_sd,
       group_inc + cheat_inc + indiv_inc
     
   }
+  
+  return(person_data)
 }
 
 #get the responses for a single item
