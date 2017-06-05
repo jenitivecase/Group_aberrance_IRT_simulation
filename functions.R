@@ -14,7 +14,7 @@ item_sim <- function(n_items, b_mean, b_sd, a_min, a_max){
 
 
 group_sim <- function(N_groups, groupsize_min, groupsize_max,
-                      theta_mean, theta_sd){
+                      mean_increase){
   group_init <- 1
   while(sum(group_init) != N_people){
     group_init <- round(rtruncnorm(n = N_groups, a = groupsize_min, 
@@ -23,72 +23,49 @@ group_sim <- function(N_groups, groupsize_min, groupsize_max,
   }
   group_init <- data.frame(matrix(c(group_init, c(1:300)), ncol = 2))
   names(group_init) <- c("size", "id")
-  group_init$ability_mean <- rnorm(N_groups, theta_mean, theta_sd)
+  group_init$ability_inc <- rnorm(N_groups, mean_increase, 0.1)
   
   return(group_init)
 }
 
-members_sim <- function(size, id, ability_mean){
-  person_mat <- data.frame(matrix(NA, nrow = size, ncol = 3))
-  names(person_mat) <- c("ability", "groupid")
-  person_mat$groupid <- id
-  person_mat$ability <- rnorm(size, ability_mean, group_sd)
-  return(person_mat)
-}
-  
 #simulate a set of people's ability scores
 two_yr_ability_sim <- function(N_people, theta_mean, theta_sd,
                         N_groups, groupsize_min, groupsize_max, group_sd,
                         mean_increase, yr_corr, n_cheat, cheat_eff){
   
-  #year 1
-  yr1_groups <- group_sim(N_groups, groupsize_min, groupsize_max,
-                      theta_mean, theta_sd)
   
-  yr1_abilities <- vector("list", N_groups)
-  for(i in 1:nrow(yr1_groups)){
-    yr1_abilities[[i]] <- members_sim(yr1_groups[i, "size"], yr1_groups[i, "id"], 
-                                      yr1_groups[i, "ability_mean"])
-  }
+  person_data <- data.frame(matrix(NA, nrow = N_people, ncol = 4))
+  names(person_data) <- c("studentid", "groupid", 
+                          "yr1_ability", "yr2_ability")
+  person_data$studentid <- c(1:N_people)
   
-  yr1_abilities <- do.call(rbind, yr1_abilities)
-  yr1_abilities$studentid <- c(1:nrow(yr1_abilities))
-  
+  person_data$yr1_ability <- rnorm(N_people, theta_mean, theta_sd)
   
   #year 2
+  groups <- group_sim(N_groups, groupsize_min, groupsize_max,
+                      mean_increase)
+  
   cheat_groups <- c((N_groups - n_cheat):N_groups)
   
-  yr2_groups <- yr1_groups
-  # group_init <- 1
-  # while(sum(group_init) != N_people){
-  #   group_init <- round(rtruncnorm(n = N_groups, a = groupsize_min, 
-  #                                  b = groupsize_max, 
-  #                                  mean = 20, sd = 5))
-  # }
-  # yr2_groups$size <- group_init
-  yr2_groups$ability_mean <- yr2_groups$ability_mean + rnorm(N_groups, mean_increase, 0.1)
-  
-  yr2_groups[which(yr2_groups$id %in% cheat_groups), "ability_mean"] <- 
-    yr2_groups[which(yr2_groups$id %in% cheat_groups), "ability_mean"] + 
-    rnorm(length(cheat_groups), cheat_eff, 0.1)
-  
-  
-  yr2_abilities <- vector("list", N_groups)
-  for(i in 1:nrow(yr2_groups)){
-    yr2_abilities[[i]] <- members_sim(yr2_groups[i, "size"], yr2_groups[i, "id"], 
-                                      yr2_groups[i, "ability_mean"])
-  }
-  
-  yr2_abilities <- do.call(rbind, yr2_abilities)
-  yr2_abilities <- arrange(yr2_abilities, desc(studentid))
+  person_data$groupid <- rep(groups$id, groups$size)
 
-  
-  return(list(yr1_ability_scores, yr2_ability_scores))
+  for(i in 1:nrow(person_data)){
+    group_inc <- rnorm(1, 
+                       groups[which(groups$id == person_data[i]), "ability_inc"],
+                       0.1)
+    cheat_inc <- ifelse(person_data[i, "groupid"] %in% cheat_groups, 
+                        rnorm(1, cheat_eff, 0.1), 
+                        rnorm(1, 0, 0.1))
+    indiv_inc <- rnorm(1, 0, 0.1)
+    person_data[i, "yr2_ability"] <- yr_corr * person_data[i, "yr1_ability"] +
+      group_inc + cheat_inc + indiv_inc
+    
+  }
 }
 
 #get the responses for a single item
 response_sim <- function(person_vec, item_vec){
-  guts <- item_vec["a_param"]*(person_vec["theta"]-item_vec["b_param"])
+  guts <- item_vec["a_param"]*(person_vec["yr2_ability"]-item_vec["b_param"])
   prob <- exp(guts)/(1+exp(guts))
   ifelse(runif(1, 0, 1) <= prob, return(1), return(0)) 
 }
