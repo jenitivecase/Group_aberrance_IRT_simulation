@@ -12,28 +12,44 @@ item_sim <- function(n_items, b_mean, b_sd, a_min, a_max){
   return(item_param)
 }
 
-#simulate a set of people's ability scores
-two_yr_ability_sim <- function(N_people, theta_mean, theta_sd,
-                        N_groups, groupsize_min, groupsize_max,
-                        mean_increase, yr_corr, n_cheat, cheat_eff){
-  #df setup
-  yr1_ability_scores <- data.frame(matrix(NA, nrow = N_people, ncol = 3))
-  yr2_ability_scores <- data.frame(matrix(NA, nrow = N_people, ncol = 3))
-  
-  colnames(yr1_ability_scores) <- c("theta", "group")
-  colnames(yr2_ability_scores) <- c("theta", "group")
-  
-  #group sim
+
+group_sim <- function(N_groups, groupsize_min, groupsize_max,
+                      theta_mean, theta_sd){
   group_init <- 1
   while(sum(group_init) != N_people){
     group_init <- round(rtruncnorm(n = N_groups, a = groupsize_min, 
                                    b = groupsize_max, 
                                    mean = 20, sd = 5))
   }
+  group_init <- data.frame(matrix(c(group_init, c(1:300)), ncol = 2))
+  names(group_init) <- c("size", "id")
+  group_init$ability_mean <- rnorm(N_groups, theta_mean, theta_sd)
   
-  yr1_ability_scores[,"group"] <- group_init
+  return(group_init)
+}
+
+members_sim <- function(size, id, ability_mean){
+  person_mat <- data.frame(matrix(NA, nrow = size, ncol = 2))
+  names(person_mat) <- c("ability", "groupid")
+  person_mat$groupid <- id
+  person_mat$ability <- rnorm(size, ability_mean, group_sd)
+  return(person_mat)
+}
   
-  yr2_ability_scores[,"group"] <- group_init[sample(length(group_init), length(group_init))]
+#simulate a set of people's ability scores
+two_yr_ability_sim <- function(N_people, theta_mean, theta_sd,
+                        N_groups, groupsize_min, groupsize_max, group_sd,
+                        mean_increase, yr_corr, n_cheat, cheat_eff){
+  
+  groups <- group_sim(N_groups, groupsize_min, groupsize_max,
+                      theta_mean, theta_sd)
+  
+  yr1_abilities <- vector("list", N_groups)
+  for(i in 1:nrow(groups)){
+    yr1_abilities[[i]] <- members_sim(groups[i, "size"], groups[i, "id"], groups[i, "ability_mean"])
+  }
+  
+  yr1_abilities <- do.call(rbind, yr1_abilities)
   
   cheat_groups <- c((N_groups - n_cheat):N_groups)
   
