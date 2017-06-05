@@ -1,7 +1,7 @@
 #### DATA GENERATION ####
 
 #simulate a set of items
-item_sim <- function(n_items, b_mean, b_sd, a_min, a_max, ){
+item_sim <- function(n_items, b_mean, b_sd, a_min, a_max){
   item_param <- matrix(NA, nrow = n_items, ncol = 2)
   colnames(item_param) <- c("b_param", "a_param")
   
@@ -36,8 +36,7 @@ ability_sim <- function(N_people, theta_mean, theta_sd,
 
 #get the responses for a single item
 response_sim <- function(person_vec, item_vec){
-  guts <- item_vec["a_param"]*(person_vec["theta"]-
-                                 (item_vec["b_param"]+item_vec["dif_param"]*person_vec["group"]))
+  guts <- item_vec["a_param"]*(person_vec["theta"]-item_vec["b_param"])
   prob <- exp(guts)/(1+exp(guts))
   ifelse(runif(1, 0, 1) <= prob, return(1), return(0)) 
 }
