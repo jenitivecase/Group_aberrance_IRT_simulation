@@ -27,4 +27,5 @@ people <- two_yr_ability_sim(N_people, theta_mean=0, theta_sd=1,
                              N_groups, groupsize_min, groupsize_max, group_sd,
                              mean_increase, yr_corr, n_cheat, cheat_eff)
 
-dataset <- one_dataset(person_param = people, item_param = items)
+responses <- apply(items, 1, FUN = item_response_sim, person_param = people)
+responses <- do.call(rbind, responses)
