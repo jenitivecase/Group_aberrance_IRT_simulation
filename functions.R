@@ -31,8 +31,8 @@ group_sim <- function(N_groups, N_people, groupsize_min, groupsize_max,
 
 #simulate a set of people's ability scores
 two_yr_ability_sim <- function(N_people, theta_mean, theta_sd,
-                        N_groups, groupsize_min, groupsize_max, group_sd,
-                        mean_increase, yr_corr, n_cheat, cheat_eff){
+                               N_groups, groupsize_min, groupsize_max, group_sd,
+                               mean_increase, yr_corr, n_cheat, cheat_eff){
   person_data <- data.frame(matrix(NA, nrow = N_people, ncol = 4))
   names(person_data) <- c("studentid", "groupid", 
                           "yr1_ability", "yr2_ability")
@@ -47,7 +47,7 @@ two_yr_ability_sim <- function(N_people, theta_mean, theta_sd,
   cheat_groups <- c((N_groups - n_cheat):N_groups)
   
   person_data$groupid <- rep(groups$id, groups$size)
-
+  
   for(i in 1:nrow(person_data)){
     group_inc <- rnorm(1, 
                        groups[which(groups$id == person_data[i, "groupid"]), "ability_inc"],
@@ -64,31 +64,57 @@ two_yr_ability_sim <- function(N_people, theta_mean, theta_sd,
   return(person_data)
 }
 
-#get the responses for a single item
-response_sim <- function(person_vec, item_vec){
-  guts <- item_vec["a_param"]*(person_vec["yr2_ability"]-item_vec["b_param"])
+#get the a single person's response to a single item
+response_sim <- function(ability, item_vec){
+  guts <- item_vec["a_param"]*(ability-item_vec["b_param"])
   prob <- exp(guts)/(1+exp(guts))
   ifelse(runif(1, 0, 1) <= prob, return(1), return(0)) 
 }
 
-#get responses for a single person to a set of items
-person_sim <- function(person_vec, item_param = item_param){
-  responses_vec <- data.frame(matrix(NA, nrow=nrow(item_param)))
-  for(i in 1:nrow(item_param)){
-    responses_vec[i] <- response_sim(person_vec, item_param[i,])
-  }
-  return(responses_vec)
+#get a set of people's responses to a single item 
+item_response_sim <- function(item_param, person_param){
+  output <- data.frame(matrix(NA, nrow = nrow(person_param), ncol = 4))
+  colnames(output) <- c("studentid", "groupid", "itemid", "response")
+  output$studentid <- person_param$studentid
+  output$groupid <- person_param$groupid
+  output$itemid <- item_param["itemid"]
+  output$response <- sapply(person_param[,"yr2_ability"], FUN = response_sim, 
+                            item_vec = item_param)
+  
+  return(output)
 }
 
-#get responses for a set of people to a set of items
-one_dataset <- function(person_param, item_param){
-  responses <- matrix(NA, nrow = nrow(person_param), ncol = nrow(item_param))
-  for(i in 1:nrow(person_param)){
-    responses[i,] <- person_sim(person_param[i,], item_param)
+#get response dataset
+dataset_sim <- function(person_param, item_param){
+  responses <- vector("list", nrow(item_param))
+  
+  for(i in 1:nrow(item_param)){
+    output <- data.frame(matrix(NA, nrow = nrow(person_param), ncol = 4))
+    colnames(output) <- c("studentid", "groupid", "itemid", "response")
+    output$studentid <- person_param$studentid
+    output$groupid <- person_param$groupid
+    output$itemid <- item_param[i, "itemid"]
+    output$response <- sapply(people[,"yr2_ability"], FUN = response_sim, 
+                             item_vec = item_param[i,])
+      
+    responses[[i]] <- output
   }
-  #colnames(responses) <- paste0("V", 1:nrow(item_param))
-  return(responses)
+  
+  do.call(rbind, responses)
+  
 }
+
+# #get responses for a set of people to a set of items
+# one_dataset <- function(person_param, item_param){
+#   responses <- data.frame(matrix, NA, nrow = nrow(person_param)*nrow(item_param),
+#                           ncol = 3)
+#   
+#   for(i in 1:nrow(person_param)){
+#     responses[i,] <- person_sim(person_param[i,], item_param)
+#   }
+#   #colnames(responses) <- paste0("V", 1:nrow(item_param))
+#   return(responses)
+# }
 
 
 #### LONG FORMAT RESTRUCTURING ####
