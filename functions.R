@@ -2,18 +2,19 @@
 
 #simulate a set of items
 item_sim <- function(n_items, b_mean, b_sd, a_min, a_max){
-  item_param <- matrix(NA, nrow = n_items, ncol = 2)
-  colnames(item_param) <- c("b_param", "a_param")
+  item_param <- data.frame(matrix(NA, nrow = n_items, ncol = 3))
+  colnames(item_param) <- c("itemid", "b_param", "a_param")
+  item_param$itemid <- c(1:n_items)
   
-  item_param[, "b_param"] <- rnorm(nrow(item_param), b_mean, b_sd)
+  item_param$b_param <- rnorm(nrow(item_param), b_mean, b_sd)
   #change to draw uniform distribution .5, 3.5
-  item_param[, "a_param"] <- runif(nrow(item_param), a_min, a_max)
+  item_param$a_param <- runif(nrow(item_param), a_min, a_max)
   
   return(item_param)
 }
 
-
-group_sim <- function(N_groups, groupsize_min, groupsize_max,
+#simulate group membership for a given number of examinees
+group_sim <- function(N_groups, N_people, groupsize_min, groupsize_max,
                       mean_increase){
   group_init <- 1
   while(sum(group_init) != N_people){
@@ -40,7 +41,7 @@ two_yr_ability_sim <- function(N_people, theta_mean, theta_sd,
   person_data$yr1_ability <- rnorm(N_people, theta_mean, theta_sd)
   
   #year 2
-  groups <- group_sim(N_groups, groupsize_min, groupsize_max,
+  groups <- group_sim(N_groups, N_people, groupsize_min, groupsize_max,
                       mean_increase)
   
   cheat_groups <- c((N_groups - n_cheat):N_groups)
@@ -72,7 +73,7 @@ response_sim <- function(person_vec, item_vec){
 
 #get responses for a single person to a set of items
 person_sim <- function(person_vec, item_param = item_param){
-  responses_vec <- matrix(NA, nrow=nrow(item_param))
+  responses_vec <- data.frame(matrix(NA, nrow=nrow(item_param)))
   for(i in 1:nrow(item_param)){
     responses_vec[i] <- response_sim(person_vec, item_param[i,])
   }
