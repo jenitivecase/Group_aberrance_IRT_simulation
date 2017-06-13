@@ -46,17 +46,17 @@ model {
   corr ~ normal(0, 1);
   group_inc ~ normal(0, 3);
   indiv_err ~ normal(0, 3);
-  
-  for(i in 1:n_observations){
-    eta_yr2[i] = a_yr2[itemid[i]]*(theta2[studentid[i]] - (b_yr2[itemid[i]]));
-  }
-  
-  response_yr2 ~ bernoulli_logit(eta_yr2);
 
   for(i in 1:n_observations){
     eta_yr1[i] = a_yr1[itemid[i]]*(theta1[studentid[i]] - (b_yr1[itemid[i]]));
   }
 
-  response_yr1 ~ bernoulli_logit(eta_yr1);
+  response_yr1 ~ bernoulli_logit(eta_yr1);  
+
+  for(i in 1:n_observations){
+    eta_yr2[i] = a_yr2[itemid[i]]*(theta2[studentid[i]] - (b_yr2[itemid[i]]));
+  }
+  
+  response_yr2 ~ bernoulli_logit(eta_yr2);
 }
 "
