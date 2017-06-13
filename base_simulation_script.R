@@ -29,3 +29,8 @@ people <- two_yr_ability_sim(N_people, theta_mean=0, theta_sd=1,
 
 responses <- apply(items, 1, FUN = item_response_sim, person_param = people)
 responses <- do.call(rbind, responses)
+
+n_observations <- nrow(responses)
+
+b.dat_long <- list("n_people", "n_items", "n_observations", "n_groups", 
+                   "studentid", "groupid", "itemid", "response")
