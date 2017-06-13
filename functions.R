@@ -72,13 +72,13 @@ response_sim <- function(ability, item_vec){
 }
 
 #get a set of people's responses to a single item 
-item_response_sim <- function(item_param, person_param){
+item_response_sim <- function(item_param, person_param, ability_col){
   output <- data.frame(matrix(NA, nrow = nrow(person_param), ncol = 4))
   colnames(output) <- c("studentid", "groupid", "itemid", "response")
   output$studentid <- person_param$studentid
   output$groupid <- person_param$groupid
   output$itemid <- item_param["itemid"]
-  output$response <- sapply(person_param[,"yr2_ability"], FUN = response_sim, 
+  output$response <- sapply(person_param[,ability_col], FUN = response_sim, 
                             item_vec = item_param)
   
   return(output)
