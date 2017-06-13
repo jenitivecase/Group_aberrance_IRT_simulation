@@ -8,7 +8,7 @@ data {
   int<lower=0, upper=n_items> itemid[n_observations];
   int<lower=0, upper=1> response_yr1[n_observations];
   int<lower=0, upper=1> response_yr2[n_observations];
-  int<lower=0, upper=1> groupid[n_observations];
+  int<lower=0, upper=n_groups> groupid[n_observations];
 }
 
 parameters {
