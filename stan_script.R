@@ -12,11 +12,12 @@ data {
 }
 
 parameters {
-  real<lower=0> a[n_items];
-  real<lower=0> b[n_items];
+  real<lower=0> a_yr1[n_items];
+  real<lower=0> b_yr1[n_items];
+  real<lower=0> a_yr2[n_items];
+  real<lower=0> b_yr2[n_items];
   real theta1[n_people];
   real<lower=-1, upper=1> corr;
-  real mu2;
   real group_inc[n_groups];
   real indiv_err[n_people];
 }
@@ -34,6 +35,7 @@ transformed parameters {
 }
 
 model {
+  real eta_yr1[n_observations];
   real eta_yr2[n_observations];
   
   a_yr1 ~ lognormal(0, 1);
