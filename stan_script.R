@@ -6,57 +6,55 @@ data {
   int<lower=0> n_groups;
   int<lower=0, upper=n_people> studentid[n_observations];
   int<lower=0, upper=n_items> itemid[n_observations];
-  int<lower=0, upper=1> response[n_observations];
+  int<lower=0, upper=1> response_yr1[n_observations];
+  int<lower=0, upper=1> response_yr2[n_observations];
   int<lower=0, upper=1> groupid[n_observations];
 }
 
 parameters {
-  vector<lower=0>[n_items] a;
-  vector[n_items] b;
-  vector[n_people] theta1;
-  real<lower=0, upper=1> corr;
-  real<lower=0> sigma2;
+  real<lower=0> a[n_items];
+  real<lower=0> b[n_items];
+  real theta1[n_people];
+  real<lower=-1, upper=1> corr;
   real mu2;
+  real group_inc[n_groups];
+  real indiv_err[n_people];
 }
 
 transformed parameters {
-  vector[n_groups] group_inc;
-  vector[n_people] indiv_err;
-  vector[n_people] theta2;
-  # vector[n_items] ss_err;
-  # vector[n_items] ss_reg;
-  # real R2;
+  real theta2[n_people];
+  real mu2;
   
   for (i in 1:n_observations) {
     theta2[studentid[i]] = corr*theta1[studentid[i]] + group_inc[groupid[i]] + indiv_err[studentid[i]];
   }
-  
-  
-### how to calculate here?
-#   for (j in 1:n_items) {
-#     ss_err[j] = pow((D[j]-mu[j]),2);
-#     ss_reg[j] = pow((mu[j]-mean(D[])),2);
-#   }
-#   
-#   R2 = sum(ss_reg[])/(sum(ss_reg[])+sum(ss_err[]));
+
+  mu2 = mean(theta2);
+
 }
 
 model {
-  vector[n_observations] eta;
+  real eta_yr2[n_observations];
   
-  a ~ lognormal(0, 1);
-  b ~ normal(0, 1);
-  theta2 ~ normal(mu2, 1);
+  a_yr1 ~ lognormal(0, 1);
+  b_yr1 ~ normal(0, 1);
+  a_yr2 ~ lognormal(0, 1);
+  b_yr2 ~ normal(0, 1);
   theta1 ~ normal(0, 1);
-  sigma2 ~ normal(0, 10);
   corr ~ normal(0, 1);
   group_inc ~ normal(0, 3);
   indiv_err ~ normal(0, 3);
   
   for(i in 1:n_observations){
-    eta[i] = a[itemid[i]]*(theta2[studentid[i]] - (b[itemid[i]]));
+    eta_yr2[i] = a_yr2[itemid[i]]*(theta2[studentid[i]] - (b_yr2[itemid[i]]));
   }
   
-  response ~ bernoulli_logit(eta);
+  response_yr2 ~ bernoulli_logit(eta_yr2);
+
+  for(i in 1:n_observations){
+    eta_yr1[i] = a_yr1[itemid[i]]*(theta1[studentid[i]] - (b_yr1[itemid[i]]));
+  }
+
+  response_yr1 ~ bernoulli_logit(eta_yr1);
 }
 "
