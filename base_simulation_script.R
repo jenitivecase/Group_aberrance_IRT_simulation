@@ -5,7 +5,6 @@ options(stringsAsFactors = FALSE)
 library(truncnorm)
 library(dplyr)
 library(tidyr)
-library(mirt)
 library(rstan)
 
 source("functions.R")
@@ -39,8 +38,6 @@ responses_yr2 <- apply(items_yr2, 1, FUN = item_response_sim, person_param = peo
                        ability_col = "yr2_ability")
 responses_yr2 <- do.call(rbind, responses_yr2)
 
-n_observations <- nrow(responses)
-
 studentid <- responses_yr2[, "studentid"]
 groupid <- responses_yr2[, "groupid"]
 itemid <- responses_yr2[, "itemid"]
@@ -62,4 +59,6 @@ precomp_model <- stan_model(stanc_ret = precomp)
 #conducting the analysis
 analysis <- sampling(precomp_model, data = b.dat_long,
                      iter = 10000, warmup = 5000, chains = 2, verbose = FALSE, 
-                     cores = 2, seed = "7072014")
+                     cores = 2)
+
+saveRDS(analysis, "group_aberrance_IRT_test_20170613.rds")
