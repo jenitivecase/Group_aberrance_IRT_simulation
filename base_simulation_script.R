@@ -6,8 +6,10 @@ library(truncnorm)
 library(dplyr)
 library(tidyr)
 library(mirt)
+library(rstan)
 
 source("functions.R")
+source("stan_script.R")
 
 N_people <- 6000
 N_groups <- 300
@@ -39,16 +41,25 @@ responses_yr2 <- do.call(rbind, responses_yr2)
 
 n_observations <- nrow(responses)
 
-studentid <- responses_yr2["studentid"]
-groupid <- responses_yr2["groupid"]
-itemid <- responses_yr2["itemid"]
-response_yr1 <- responses_yr1["response"]
-response_yr2 <- responses_yr2["response"]
+studentid <- responses_yr2[, "studentid"]
+groupid <- responses_yr2[, "groupid"]
+itemid <- responses_yr2[, "itemid"]
+response_yr1 <- responses_yr1[, "response"]
+response_yr2 <- responses_yr2[, "response"]
   
 n_people <- N_people
 n_groups <- N_groups
-n_observations <- nrow(response_yr2)
+n_observations <- length(response_yr2)
 
 b.dat_long <- list("n_people", "n_items", "n_observations", "n_groups", 
                    "studentid", "groupid", "itemid", 
                    "response_yr1", "response_yr2")
+
+
+precomp <- stanc(model_code = stancode_long)
+precomp_model <- stan_model(stanc_ret = precomp)
+
+#conducting the analysis
+analysis <- sampling(precomp_model, data = b.dat_long,
+                     iter = 10000, warmup = 5000, chains = 2, verbose = FALSE, 
+                     cores = 2, seed = "7072014")
