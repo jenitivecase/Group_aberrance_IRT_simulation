@@ -59,7 +59,7 @@ responses_yr2 <- do.call(rbind, responses_yr2)
 
 studentid <- responses_yr2[, "studentid"]
 groupid <- responses_yr2[, "groupid"]
-itemid <- responses_yr2[, "itemid"]
+itemid <- unique(c(responses_yr1[, "itemid"], responses_yr2[, "itemid"]))
 response_yr1 <- responses_yr1[, "response"]
 response_yr2 <- responses_yr2[, "response"]
   
