@@ -41,10 +41,10 @@ model {
   real eta_yr1[n_observations];
   real eta_yr2[n_observations];
   
-  a_yr1 ~ lognormal(0, 1);
-  b_yr1 ~ normal(0, 1);
-  a_yr2 ~ lognormal(0, 1);
-  b_yr2 ~ normal(0, 1);
+  a ~ lognormal(0, 1);
+  b ~ normal(0, 1);
+//  a_yr2 ~ lognormal(0, 1);
+//  b_yr2 ~ normal(0, 1);
   theta1 ~ normal(0, 1);
   corr ~ normal(0, 1);
   group_inc ~ normal(0, 3);
