@@ -21,10 +21,29 @@ yr_corr <- 0.6
 cheat_eff <- 0.5
 n_cheat <- N_groups * 0.05
 
+# add parameter: length of anchor test
+anchor_length <- 10
+
 items_yr1 <- item_sim(n_items, b_mean = 0, b_sd = 1,
                   a_min = 0.5, a_max = 3)
-items_yr2 <- item_sim(n_items, b_mean = 0, b_sd = 1,
+
+# change b_mean in year2 to be equal to theta mean (0.5 growth)
+items_yr2 <- item_sim(n_items, b_mean = 0.5, b_sd = 1,
                       a_min = 0.5, a_max = 3)
+
+# anchor test is defined as the last anchor_length items on year1
+anchor_items <- items_yr1 %>%
+  top_n(anchor_length, wt = itemid)
+
+# alter year2 items
+# remove first anchor_length items, increment itemids so all items across
+#   grades have a unique id
+# bind on anchor test
+items_yr2 <- items_yr2 %>%
+  top_n(-(n_items - anchor_length), wt = itemid) %>%
+  mutate(itemid = itemid + n_items) %>%
+  bind_rows(anchor_items)
+
 
 people <- two_yr_ability_sim(N_people, theta_mean=0, theta_sd=1,
                              N_groups, groupsize_min, groupsize_max, group_sd,
@@ -47,6 +66,9 @@ response_yr2 <- responses_yr2[, "response"]
 n_people <- N_people
 n_groups <- N_groups
 n_observations <- length(response_yr2)
+
+# recalculate number of unique items for stan
+n_items <- nrow(items_yr1) + nrow(items_yr2) - anchor_length
 
 b.dat_long <- list("n_people", "n_items", "n_observations", "n_groups", 
                    "studentid", "groupid", "itemid", 
