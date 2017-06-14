@@ -44,10 +44,13 @@ items_yr2 <- items_yr2 %>%
   mutate(itemid = itemid + n_items) %>%
   bind_rows(anchor_items)
 
+saveRDS(list(items_yr1, items_yr2), "true_item_params.rds")
 
 people <- two_yr_ability_sim(N_people, theta_mean=0, theta_sd=1,
                              N_groups, groupsize_min, groupsize_max, group_sd,
                              mean_increase, yr_corr, n_cheat, cheat_eff)
+
+saveRDS(people, "true_ability_scores.rds")
 
 responses_yr1 <- apply(items_yr1, 1, FUN = item_response_sim, person_param = people,
                        ability_col = "yr1_ability")
