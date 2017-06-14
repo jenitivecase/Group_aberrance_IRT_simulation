@@ -62,7 +62,8 @@ responses_yr2 <- do.call(rbind, responses_yr2)
 
 studentid <- responses_yr2[, "studentid"]
 groupid <- responses_yr2[, "groupid"]
-itemid <- unique(c(responses_yr1[, "itemid"], responses_yr2[, "itemid"]))
+itemid_yr1 <- responses_yr1[, "itemid"]
+itemid_yr2 <- responses_yr2[, "itemid"]
 response_yr1 <- responses_yr1[, "response"]
 response_yr2 <- responses_yr2[, "response"]
   
@@ -86,4 +87,4 @@ analysis <- sampling(precomp_model, data = b.dat_long,
                      iter = 10000, warmup = 5000, chains = 2, verbose = FALSE, 
                      cores = 2)
 
-saveRDS(analysis, "group_aberrance_IRT_test_20170613.rds")
+saveRDS(analysis, "group_aberrance_IRT_test.rds")
