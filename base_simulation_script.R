@@ -85,7 +85,7 @@ precomp_model <- stan_model(stanc_ret = precomp)
 
 #conducting the analysis
 analysis <- sampling(precomp_model, data = b.dat_long,
-                     iter = 1000, warmup = 500, chains = 2, verbose = FALSE, 
+                     iter = 10000, warmup = 5000, chains = 2, verbose = FALSE, 
                      cores = 2)
 
 saveRDS(analysis, "group_aberrance_IRT_test.rds")
