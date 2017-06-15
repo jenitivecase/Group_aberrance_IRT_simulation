@@ -10,6 +10,7 @@ data {
   int<lower=0, upper=1> response_yr1[n_observations];
   int<lower=0, upper=1> response_yr2[n_observations];
   int<lower=0, upper=n_groups> groupid[n_observations];
+  int<lower=1, upper=n_groups> per_group[n_people];
 }
 
 parameters {
@@ -30,12 +31,11 @@ transformed parameters {
   real theta2[n_people];
   real mu2;
   
-  for (i in 1:n_observations) {
-    theta2[studentid[i]] = corr*theta1[studentid[i]] + group_inc[groupid[i]] + indiv_err[studentid[i]];
+  for (i in 1:n_people) {
+    theta2[i] = corr*theta1[i] + group_inc[per_group[i]] + indiv_err[i];
   }
 
   mu2 = mean(theta2);
-
 }
 
 model {
@@ -44,8 +44,8 @@ model {
   
   a ~ lognormal(0, 1);
   b ~ normal(0, 1);
-//  a_yr2 ~ lognormal(0, 1);
-//  b_yr2 ~ normal(0, 1);
+  //  a_yr2 ~ lognormal(0, 1);
+  //  b_yr2 ~ normal(0, 1);
   theta1 ~ normal(0, 1);
   corr ~ normal(0, 1);
   group_inc ~ normal(0, 3);

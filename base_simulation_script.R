@@ -66,6 +66,7 @@ itemid_yr1 <- responses_yr1[, "itemid"]
 itemid_yr2 <- responses_yr2[, "itemid"]
 response_yr1 <- responses_yr1[, "response"]
 response_yr2 <- responses_yr2[, "response"]
+per_group <- people[, "groupid"]
   
 n_people <- N_people
 n_groups <- N_groups
@@ -76,7 +77,7 @@ n_items <- nrow(items_yr1) + nrow(items_yr2) - anchor_length
 
 b.dat_long <- list("n_people", "n_items", "n_observations", "n_groups", 
                    "studentid", "groupid", "itemid", 
-                   "response_yr1", "response_yr2")
+                   "response_yr1", "response_yr2", "per_group")
 
 
 precomp <- stanc(model_code = stancode_long)
@@ -84,7 +85,7 @@ precomp_model <- stan_model(stanc_ret = precomp)
 
 #conducting the analysis
 analysis <- sampling(precomp_model, data = b.dat_long,
-                     iter = 10000, warmup = 5000, chains = 2, verbose = FALSE, 
+                     iter = 1000, warmup = 500, chains = 2, verbose = FALSE, 
                      cores = 2)
 
 saveRDS(analysis, "group_aberrance_IRT_test.rds")
