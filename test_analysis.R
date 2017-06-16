@@ -1,3 +1,5 @@
+library(rstan)
+
 analysis <- readRDS("C:/Users/jennifer.brussow/Desktop/group_aberrance_IRT_test.rds")
 
 params_summary <- summary(analysis, pars = c("a", "b", 
