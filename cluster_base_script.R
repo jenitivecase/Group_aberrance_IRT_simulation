@@ -115,7 +115,7 @@ for(i in 1:nreps){
   true_params[[i]] <- list(student_info, item_info)
   names(true_params[[i]]) <- c("student_info", "item_info")
   
-  precomp <- stanc(file = "aberrance.stan")
+  precomp <- stanc(file = paste0(work_dir, "/aberrance.stan"))
   precomp_model <- stan_model(stanc_ret = precomp)
   
   analysis <- sampling(precomp_model, data = stan_data,
