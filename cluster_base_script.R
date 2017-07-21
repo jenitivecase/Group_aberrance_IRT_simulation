@@ -21,7 +21,7 @@ for (arg in 1:length(args)){
 }
 
 #### PARAM SETUP ####
-n_reps <- 5
+nreps <- 5
 
 n_items <- 60
 n_anchor <- 20
