@@ -4,9 +4,21 @@ library(rstan)
 options(scipen = 999)
 options(stringsAsFactors = FALSE)
 
+work_dir <- getwd()
 date <- format.Date(Sys.Date(), "%Y%m%d")
 
 source("cluster_functions.R")
+
+#### COMMAND LINE ARGUMENT SETUP ####
+comm_args <- commandArgs(trailingOnly = TRUE)
+
+args <- strsplit(comm_args,"=",fixed=TRUE)
+
+for (arg in 1:length(args)){
+  argname <- args[[arg]][1]
+  argval <- as.numeric(args[[arg]][2])
+  assign(argname,argval)
+}
 
 #### PARAM SETUP ####
 n_reps <- 5
@@ -27,12 +39,7 @@ theta_mean <- 0
 theta_sd <- 1
 theta_increase <- 0.5
 theta_corr <- 0.7
-
-## varying params
-#either 0.5 or 1.0
-cheat_mean <- 0.5
-#either 1% or 5%
-n_cheat <- n_groups*0.01
+n_cheat <- n_groups*(pct_cheat/100)
 
 
 #### DATA SAVE SETUP ####
