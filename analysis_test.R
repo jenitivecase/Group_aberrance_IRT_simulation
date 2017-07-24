@@ -5,21 +5,42 @@ source("K:/AscendKC/Corp/R_and_D/1-USERS/Jennifer Brussow/options.R")
 
 library(tidyverse)
 library(rstan)
+library(ggplot2)
 
 fit_files <- grep("fit", list.files(), value = TRUE)
 true_files <- grep("true", list.files(), value = TRUE)
 
+fit_summary <- readRDS(fit_files[1])[[1]]
 
-student_info <- readRDS("student_info.rds")
-item_info <- readRDS("item_info.rds")
-analysis <- readRDS("stan_model.rds")
+true_info <- readRDS(true_files[1])[[1]]
 
+student_info <- true_info[["student_info"]]
+item_info <- true_info[["item_info"]]
+
+
+n_items <- 60
+n_anchor <- 20
+b1_mean <- 0
+b2_mean <- 0.5
+b_sd <- 0.7
+a_min <- 0.5
+a_max <- 3.5
+
+n_people <- 6000
+n_groups <- 300
+group_min <- 5
+group_max <- 35
+theta_mean <- 0
+theta_sd <- 1
+theta_increase <- 0.5
 theta_corr <- 0.7
-n_items <- 30
-n_anchor <- 10
 
-fit_summary <- summary(analysis)
+cheat_mean <- gsub("cheat-mean", "", unlist(strsplit(true_files[1], split = "_"))[4])
+cheat_mean <- as.numeric(gsub("-", ".", cheat_mean))
 
+n_cheat <- as.numeric(gsub("n", "", unlist(strsplit(true_files[1], split = "_"))[5]))
+
+###
 rhat <- fit_summary$summary %>%
   as.data.frame() %>%
   mutate(Parameter = as.factor(gsub("\\[.*]", "", rownames(.)))) %>%
@@ -32,7 +53,11 @@ rhat <- fit_summary$summary %>%
 true_group <- student_info$groups %>%
   mutate(true_effect = group_inc + cheat_eff)
 
-gr_summary <- summary(analysis, pars = "group_inc")$summary %>%
+# gr_summary <- summary(analysis, pars = "group_inc")$summary %>%
+#   as_data_frame() %>%
+#   pull(mean)
+
+gr_summary <- fit_summary$summary[grep("group_inc", rownames(fit_summary$summary)),] %>%
   as_data_frame() %>%
   pull(mean)
 
@@ -50,10 +75,12 @@ group_inc <- ggplot(true_group, aes(x = true_effect, y = estimate)) +
   labs(title = "Group increase recovery") +
   theme_bw()
 
-est_cor <- summary(analysis, pars = c("corr"))$summary %>%
-  as_data_frame() %>%
-  pull(mean)
+# est_cor <- summary(analysis, pars = c("corr"))$summary %>%
+#   as_data_frame() %>%
+#   pull(mean)
 
+est_cor <- fit_summary$summary[grep("corr", rownames(fit_summary$summary)), "mean"] 
+  
 corr <- data_frame(true = theta_corr, estimate = est_cor) %>%
   ggplot(aes(x = true, y = estimate)) +
   geom_point() +
@@ -62,10 +89,19 @@ corr <- data_frame(true = theta_corr, estimate = est_cor) %>%
   labs(title = "Correlation recovery") +
   theme_bw()
 
-est_a <- summary(analysis, pars = c("a"))$summary %>%
+# est_a <- summary(analysis, pars = c("a"))$summary %>%
+#   as_data_frame() %>%
+#   pull(mean)
+# est_b <- summary(analysis, pars = c("b"))$summary %>%
+#   as_data_frame() %>%
+#   pull(mean)
+
+
+est_a <- fit_summary$summary[grep("^a", rownames(fit_summary$summary)),] %>%
   as_data_frame() %>%
   pull(mean)
-est_b <- summary(analysis, pars = c("b"))$summary %>%
+
+est_b <- fit_summary$summary[grep("^b", rownames(fit_summary$summary)),] %>%
   as_data_frame() %>%
   pull(mean)
 
@@ -94,10 +130,17 @@ a_recovery <- ggplot(items, aes(x = a_param, y = a_est, color = type)) +
   theme_bw() +
   theme(legend.position = "bottom")
 
-theta1_est <- summary(analysis, pars = c("theta1"))$summary %>%
+# theta1_est <- summary(analysis, pars = c("theta1"))$summary %>%
+#   as_data_frame() %>%
+#   pull(mean)
+# theta2_est <- summary(analysis, pars = c("theta2"))$summary %>%
+#   as_data_frame() %>%
+#   pull(mean)
+
+theta1_est <- fit_summary$summary[grep("^theta1", rownames(fit_summary$summary)),] %>%
   as_data_frame() %>%
   pull(mean)
-theta2_est <- summary(analysis, pars = c("theta2"))$summary %>%
+theta2_est <- fit_summary$summary[grep("^theta2", rownames(fit_summary$summary)),] %>%
   as_data_frame() %>%
   pull(mean)
 
@@ -118,6 +161,6 @@ theta_recovery <- ggplot(theta) +
 
 all_plots <- list(rhat, group_inc, corr, b_recovery, a_recovery, theta_recovery)
 
-pdf("model-results.pdf")
+pdf(paste0("model-results_", date, ".pdf"))
 walk(all_plots, print)
 dev.off()
