@@ -16,7 +16,6 @@ for(file in 1:length(fit_files)){
   info <- unlist(strsplit(as.character(fit_files[file]), "_"))
   
   fit_summary <- readRDS(fit_files[file])
-  
   ##kludgy fix to remove final failed NULL list value
   fit_summary <- fit_summary[1:4]
   
@@ -24,7 +23,6 @@ for(file in 1:length(fit_files)){
   fit_summary <- do.call("rbind", fit_summary)
   
   true_info <- readRDS(true_files[file])
-  
   ##kludgy fix to remove final failed NULL list value
   true_info <- true_info[1:4]
   
@@ -33,8 +31,6 @@ for(file in 1:length(fit_files)){
   item_info <- lapply(true_info, FUN = function(x) x <- x$item_info)
   
 
-
-  
   #fixed parameters
   n_items <- 60
   n_anchor <- 20
@@ -94,7 +90,7 @@ for(file in 1:length(fit_files)){
     geom_point() +
     scale_x_continuous(limits = c(-2, 2), breaks = seq(0, 2, 0.25)) +
     scale_y_continuous(limits = c(-2, 2), breaks = seq(0, 2, 0.25)) +
-    coord_cartesian(xlim = c(0, 1.5), ylim = c(0, 1.5)) +
+    coord_cartesian(xlim = c(0, (1+cheat_mean)), ylim = c(0, (1+cheat_mean))) +
     labs(title = "Group increase recovery",
          subtitle = tag) +
     theme_bw()
