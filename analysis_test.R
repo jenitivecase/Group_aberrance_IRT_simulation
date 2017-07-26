@@ -10,12 +10,17 @@ library(ggplot2)
 fit_files <- grep("fit", list.files(), value = TRUE)
 true_files <- grep("true", list.files(), value = TRUE)
 
-fit_summary <- readRDS(fit_files[1])[[1]]
+fit_summary <- readRDS(fit_files[1])
+fit_summary <- lapply(fit_summary, FUN = function(x) as.data.frame(x$summary))
+fit_summary <- do.call("rbind", fit_summary)
 
-true_info <- readRDS(true_files[1])[[1]]
+true_info <- readRDS(true_files[1])
 
-student_info <- true_info[["student_info"]]
-item_info <- true_info[["item_info"]]
+student_info <- lapply(true_info, FUN = function(x) x <- x$student_info)
+# student_info <- bind_rows(student_info)
+
+item_info <- lapply(true_info, FUN = function(x) x <- x$item_info)
+# item_info <- bind_rows(rbind, item_info)
 
 
 n_items <- 60
@@ -41,8 +46,7 @@ cheat_mean <- as.numeric(gsub("-", ".", cheat_mean))
 n_cheat <- as.numeric(gsub("n", "", unlist(strsplit(true_files[1], split = "_"))[5]))
 
 ###
-rhat <- fit_summary$summary %>%
-  as.data.frame() %>%
+rhat <- fit_summary %>%
   mutate(Parameter = as.factor(gsub("\\[.*]", "", rownames(.)))) %>%
   ggplot(aes(x = Parameter, y = Rhat, color = Parameter)) +
   geom_jitter(height = 0, width = 0.4, show.legend = FALSE) +
@@ -50,14 +54,18 @@ rhat <- fit_summary$summary %>%
   labs(y = expression(hat(italic(R))), title = "Convergence") +
   theme_bw()
 
-true_group <- student_info$groups %>%
+
+groups <- lapply(student_info, FUN = function(x) as.data.frame(x$groups)) 
+groups <- do.call(rbind, groups)
+
+true_group <- groups %>%
   mutate(true_effect = group_inc + cheat_eff)
 
 # gr_summary <- summary(analysis, pars = "group_inc")$summary %>%
 #   as_data_frame() %>%
 #   pull(mean)
 
-gr_summary <- fit_summary$summary[grep("group_inc", rownames(fit_summary$summary)),] %>%
+gr_summary <- fit_summary[grep("group_inc", rownames(fit_summary)),] %>%
   as_data_frame() %>%
   pull(mean)
 
@@ -79,9 +87,9 @@ group_inc <- ggplot(true_group, aes(x = true_effect, y = estimate)) +
 #   as_data_frame() %>%
 #   pull(mean)
 
-est_cor <- fit_summary$summary[grep("corr", rownames(fit_summary$summary)), "mean"] 
+est_cor <- fit_summary[grep("corr", rownames(fit_summary)), "mean"] 
   
-corr <- data_frame(true = theta_corr, estimate = est_cor) %>%
+corr <- data_frame(true = rep(theta_corr, length(est_cor)), estimate = est_cor) %>%
   ggplot(aes(x = true, y = estimate)) +
   geom_point() +
   scale_x_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.1)) +
@@ -97,25 +105,31 @@ corr <- data_frame(true = theta_corr, estimate = est_cor) %>%
 #   pull(mean)
 
 
-est_a <- fit_summary$summary[grep("^a", rownames(fit_summary$summary)),] %>%
+est_a <- fit_summary[grep("^a", rownames(fit_summary)),] %>%
   as_data_frame() %>%
   pull(mean)
 
-est_b <- fit_summary$summary[grep("^b", rownames(fit_summary$summary)),] %>%
+est_b <- fit_summary[grep("^b", rownames(fit_summary)),] %>%
   as_data_frame() %>%
   pull(mean)
 
-items <- bind_rows(item_info$items1, item_info$items2) %>%
-  distinct() %>%
-  arrange(item_id) %>%
-  mutate(type = c(rep("Year 1", n_items - n_anchor), rep("Anchor", n_anchor),
-                  rep("Year 2", n_items - n_anchor))) %>%
+#this removes the empty list entry. find a more elegant solution later
+item_info <- item_info[1:4]
+items <- lapply(item_info, FUN = function(x){
+  x <- bind_rows(list(x$items1, x$items2)) %>%
+    distinct() %>%
+    arrange(item_id) %>%
+    mutate(type = c(rep("Year 1", n_items - n_anchor), rep("Anchor", n_anchor),
+                    rep("Year 2", n_items - n_anchor))) 
+})
+
+items <- bind_rows(items) %>%
   mutate(b_est = est_b, a_est = est_a)
-
+  
 b_recovery <- ggplot(items, aes(x = b_param, y = b_est, color = type)) +
   geom_point() +
-  scale_x_continuous(limits = c(-1.5, 2.5), breaks = seq(-3, 3, 0.5)) +
-  scale_y_continuous(limits = c(-1.5, 2.5), breaks = seq(-3, 3, 0.5)) +
+  scale_x_continuous(limits = c(-2.0, 3.0), breaks = seq(-3, 3, 0.5)) +
+  scale_y_continuous(limits = c(-2.0, 3.0), breaks = seq(-3, 3, 0.5)) +
   labs(title = "b-parameter recovery", x = "True", y = "Estimated") +
   scale_color_discrete(name = "Item Type") +
   theme_bw() +
@@ -137,17 +151,25 @@ a_recovery <- ggplot(items, aes(x = a_param, y = a_est, color = type)) +
 #   as_data_frame() %>%
 #   pull(mean)
 
-theta1_est <- fit_summary$summary[grep("^theta1", rownames(fit_summary$summary)),] %>%
+theta1_est <- fit_summary[grep("^theta1", rownames(fit_summary)),] %>%
   as_data_frame() %>%
   pull(mean)
-theta2_est <- fit_summary$summary[grep("^theta2", rownames(fit_summary$summary)),] %>%
+theta2_est <- fit_summary[grep("^theta2", rownames(fit_summary)),] %>%
   as_data_frame() %>%
   pull(mean)
 
-theta <- student_info$people %>%
-  arrange(id) %>%
-  select(-responses) %>%
+student_info <- student_info[1:4]
+people <- lapply(student_info, FUN = function(x) x <- x$people)
+
+theta <- lapply(people, FUN = function(x){
+  x <- x %>%
+    arrange(id) %>%
+    select(-responses) 
+})
+theta <- theta %>%
+  bind_rows() %>%
   mutate(est1 = theta1_est, est2 = theta2_est)
+
 
 theta_recovery <- ggplot(theta) +
   geom_point(aes(x = theta1, y = est1, color = "Year 1")) +
