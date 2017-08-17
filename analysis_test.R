@@ -1,6 +1,6 @@
 ### Plot results ---------------------------------------------------------------
 
-setwd("C:/Users/jennifer.brussow/Documents/group_aberr_results_20170724")
+setwd("C:/Users/jennifer.brussow/Documents/group_aberr_results_20170810")
 source("K:/AscendKC/Corp/R_and_D/1-USERS/Jennifer Brussow/options.R")
 
 library(tidyverse)
@@ -16,15 +16,11 @@ for(file in 1:length(fit_files)){
   info <- unlist(strsplit(as.character(fit_files[file]), "_"))
   
   fit_summary <- readRDS(fit_files[file])
-  ##kludgy fix to remove final failed NULL list value
-  fit_summary <- fit_summary[1:4]
   
   fit_summary <- lapply(fit_summary, FUN = function(x) as.data.frame(x$summary))
   fit_summary <- do.call("rbind", fit_summary)
   
   true_info <- readRDS(true_files[file])
-  ##kludgy fix to remove final failed NULL list value
-  true_info <- true_info[1:4]
   
   student_info <- lapply(true_info, FUN = function(x) x <- x$student_info)
   
@@ -84,16 +80,27 @@ for(file in 1:length(fit_files)){
   
   true_group <- true_group %>%
     select(group, true_effect) %>%
-    mutate(estimate = gr_summary)
+    mutate(estimate = gr_summary) %>%
+    mutate(Decision = ifelse(true_effect >= 1 & estimate >= 1, "Correct Classification", 
+                             ifelse(true_effect >= 1 & estimate < 1, "Incorrect Classification", 
+                                    ifelse(true_effect < 1 & estimate < 1, "Correct Classification", 
+                                           ifelse(true_effect < 1 & estimate >= 1 , "Incorrect Classification", NA)))), NA)
   
-  group_inc <- ggplot(true_group, aes(x = true_effect, y = estimate)) +
+  group_inc <- ggplot(true_group, aes(x = true_effect, y = estimate, color = Decision)) +
     geom_point() +
-    scale_x_continuous(limits = c(-2, 2), breaks = seq(0, 2, 0.25)) +
-    scale_y_continuous(limits = c(-2, 2), breaks = seq(0, 2, 0.25)) +
-    coord_cartesian(xlim = c(0, (1+cheat_mean)), ylim = c(0, (1+cheat_mean))) +
+    scale_x_continuous(limits = c(-2, 2), breaks = seq(-2, 2, 0.25)) +
+    scale_y_continuous(limits = c(-2, 2), breaks = seq(-2, 2, 0.25)) +
+    coord_cartesian(xlim = c(0, 2), ylim = c(-.25, 2)) +
     labs(title = "Group increase recovery",
-         subtitle = tag) +
-    theme_bw()
+         subtitle = tag, x = "True Effect", y = "Estimated Effect") +
+    theme_bw() + 
+    scale_color_manual(values = c("forestgreen", "darkred")) + 
+    geom_hline(aes(yintercept = 1)) +
+    geom_vline(aes(xintercept = 1)) +
+    theme(legend.position = "bottom") 
+  
+  ggsave(filename = paste0("classification-plot_", cheat_mean, "_pct-cheat", pct_cheat, "_", date, ".png"), plot = group_inc,
+         width = 6.5, height = 9)
   
   est_cor <- fit_summary[grep("corr", rownames(fit_summary)), "mean"] 
     
