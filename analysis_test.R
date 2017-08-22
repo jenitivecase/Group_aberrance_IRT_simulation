@@ -10,6 +10,8 @@ library(ggplot2)
 fit_files <- grep("fit", list.files(), value = TRUE)
 true_files <- grep("true", list.files(), value = TRUE)
 
+detect_thresh <- 1.5
+
 for(file in 1:length(fit_files)){
   
   #### SETUP ####
@@ -55,6 +57,7 @@ for(file in 1:length(fit_files)){
   ### MAKING GRAPHS ###
   
   tag <- paste0("For ", cheat_mean, " cheating effect and ", pct_cheat, "% of groups cheating")
+  out_label <- paste0(detect_thresh, "detect-thresh_", cheat_mean, "_cheat-mean", pct_cheat, "_pct-cheat_", date)
   
   rhat <- fit_summary %>%
     mutate(Parameter = as.factor(gsub("\\[.*]", "", rownames(.)))) %>%
@@ -81,10 +84,10 @@ for(file in 1:length(fit_files)){
   true_group <- true_group %>%
     select(group, true_effect) %>%
     mutate(estimate = gr_summary) %>%
-    mutate(Decision = ifelse(true_effect >= 1 & estimate >= 1, "Correct Classification", 
-                             ifelse(true_effect >= 1 & estimate < 1, "Incorrect Classification", 
-                                    ifelse(true_effect < 1 & estimate < 1, "Correct Classification", 
-                                           ifelse(true_effect < 1 & estimate >= 1 , "Incorrect Classification", NA)))), NA)
+    mutate(Decision = ifelse(true_effect >= detect_thresh & estimate >= detect_thresh, "Correct Classification", 
+                             ifelse(true_effect >= detect_thresh & estimate < detect_thresh, "Incorrect Classification", 
+                                    ifelse(true_effect < detect_thresh & estimate < detect_thresh, "Correct Classification", 
+                                           ifelse(true_effect < detect_thresh & estimate >= detect_thresh , "Incorrect Classification", NA)))), NA)
   
   group_inc <- ggplot(true_group, aes(x = true_effect, y = estimate, color = Decision)) +
     geom_point() +
@@ -99,8 +102,21 @@ for(file in 1:length(fit_files)){
     geom_vline(aes(xintercept = 1)) +
     theme(legend.position = "bottom") 
   
-  ggsave(filename = paste0("classification-plot_", cheat_mean, "_pct-cheat", pct_cheat, "_", date, ".png"), plot = group_inc,
+  ggsave(filename = paste0("classification-plot_", out_label, ".png"), plot = group_inc,
          width = 6.5, height = 9)
+  
+  group_inc_class <- true_group %>%
+    select(group, true_effect) %>%
+    mutate(estimate = gr_summary) %>%
+    mutate(Decision = ifelse(true_effect >= detect_thresh & estimate >= detect_thresh, "True Positive", 
+                             ifelse(true_effect >= detect_thresh & estimate < detect_thresh, "False Negative", 
+                                    ifelse(true_effect < detect_thresh & estimate < detect_thresh, "True Negative", 
+                                           ifelse(true_effect < detect_thresh & estimate >= detect_thresh , "False Positive", NA)))), NA)
+  
+  classifications <- as.data.frame(table(group_inc_class$Decision))
+  
+  write.csv(classifications, paste0("classification-decisions_", out_label, ".csv"))
+  
   
   est_cor <- fit_summary[grep("corr", rownames(fit_summary)), "mean"] 
     
