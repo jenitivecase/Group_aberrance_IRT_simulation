@@ -102,8 +102,8 @@ for(file in 1:length(fit_files)){
          subtitle = tag, x = "True Effect", y = "Estimated Effect") +
     theme_bw() + 
     scale_color_manual(values = c("forestgreen", "darkred")) + 
-    geom_hline(aes(yintercept = 1)) +
-    geom_vline(aes(xintercept = 1)) +
+    geom_hline(aes(yintercept = detect_thresh)) +
+    geom_vline(aes(xintercept = detect_thresh)) +
     theme(legend.position = "bottom") 
   
   ggsave(filename = paste0("classification-plot_", out_label, ".png"), plot = group_inc,
