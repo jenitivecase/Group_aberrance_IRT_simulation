@@ -82,12 +82,16 @@ for(file in 1:length(fit_files)){
   perfect <- data_frame(x = c(-100, 100), y = c(-100, 100))
   
   true_group <- true_group %>%
-    select(group, true_effect) %>%
+    select(group, cheat, true_effect) %>%
     mutate(estimate = gr_summary) %>%
-    mutate(Decision = ifelse(true_effect >= detect_thresh & estimate >= detect_thresh, "Correct Classification", 
-                             ifelse(true_effect >= detect_thresh & estimate < detect_thresh, "Incorrect Classification", 
-                                    ifelse(true_effect < detect_thresh & estimate < detect_thresh, "Correct Classification", 
-                                           ifelse(true_effect < detect_thresh & estimate >= detect_thresh , "Incorrect Classification", NA)))), NA)
+    mutate(Decision = ifelse(cheat == 1 & estimate >= detect_thresh, "Correct Classification",
+                             ifelse(cheat == 1 & estimate < detect_thresh, "Incorrect Classification",
+                                    ifelse(cheat == 0 & estimate < detect_thresh, "Correct Classification",
+                                           ifelse(cheat == 0 & estimate >= detect_thresh , "Incorrect Classification", NA)))), NA) %>%
+    mutate(Decision_spec = ifelse(cheat == 1 & estimate >= detect_thresh, "True Positive", 
+                                  ifelse(cheat == 1 & estimate < detect_thresh, "False Negative", 
+                                         ifelse(cheat == 0 & estimate < detect_thresh, "True Negative", 
+                                                ifelse(cheat == 0 & estimate >= detect_thresh , "False Positive", NA)))), NA)
   
   group_inc <- ggplot(true_group, aes(x = true_effect, y = estimate, color = Decision)) +
     geom_point() +
@@ -104,16 +108,8 @@ for(file in 1:length(fit_files)){
   
   ggsave(filename = paste0("classification-plot_", out_label, ".png"), plot = group_inc,
          width = 6.5, height = 9)
-  
-  group_inc_class <- true_group %>%
-    select(group, true_effect) %>%
-    mutate(estimate = gr_summary) %>%
-    mutate(Decision = ifelse(true_effect >= detect_thresh & estimate >= detect_thresh, "True Positive", 
-                             ifelse(true_effect >= detect_thresh & estimate < detect_thresh, "False Negative", 
-                                    ifelse(true_effect < detect_thresh & estimate < detect_thresh, "True Negative", 
-                                           ifelse(true_effect < detect_thresh & estimate >= detect_thresh , "False Positive", NA)))), NA)
-  
-  classifications <- as.data.frame(table(group_inc_class$Decision))
+     
+  classifications <- as.data.frame(table(true_group$Decision_spec))
   
   write.csv(classifications, paste0("classification-decisions_", out_label, ".csv"))
   
