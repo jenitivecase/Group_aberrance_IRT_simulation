@@ -93,6 +93,15 @@ for(file in 1:length(fit_files)){
                                          ifelse(cheat == 0 & estimate < detect_thresh, "True Negative", 
                                                 ifelse(cheat == 0 & estimate >= detect_thresh , "False Positive", NA)))), NA)
   
+  N <- nrow(true_group)
+  TP_N <- nrow(filter(true_group, Decision_spec == "True Positive"))
+  FP_N <- nrow(filter(true_group, Decision_spec == "False Positive"))
+  
+  print(out_label)
+  print(paste0("False Pos Rate = ", FP_N/N))
+  print(paste0("Power = ", TP_N/N))
+  print(paste0("Precision = ", TP_N/(TP_N + FP_N)))
+  
   group_inc <- ggplot(true_group, aes(x = true_effect, y = estimate, color = Decision)) +
     geom_point() +
     scale_x_continuous(limits = c(-2, 2), breaks = seq(-2, 2, 0.25)) +
