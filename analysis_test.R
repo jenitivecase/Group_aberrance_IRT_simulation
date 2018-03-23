@@ -1,6 +1,6 @@
 ### Plot results ---------------------------------------------------------------
 
-setwd("C:/Users/jennifer.brussow/Documents/group_aberr_results_20170810")
+setwd("C:/Users/jennifer.brussow/Documents/Group_aberrance_IRT_simulation/combined")
 source("K:/AscendKC/Corp/R_and_D/1-USERS/Jennifer Brussow/options.R")
 
 library(tidyverse)
@@ -61,7 +61,8 @@ for(file in 1:length(fit_files)){
   
   rhat <- fit_summary %>%
     mutate(Parameter = as.factor(gsub("\\[.*]", "", rownames(.)))) %>%
-    ggplot(aes(x = Parameter, y = Rhat, color = Parameter)) +
+    mutate(Param_type = gsub("[0-9]", "", Parameter)) %>%
+    ggplot(aes(x = Parameter, y = Rhat, color = Param_type)) +
     geom_jitter(height = 0, width = 0.4, show.legend = FALSE) +
     geom_hline(aes(yintercept = 1.1), linetype = "dashed") +
     labs(y = expression(hat(italic(R))), title = "Convergence",
@@ -108,7 +109,8 @@ for(file in 1:length(fit_files)){
     scale_y_continuous(limits = c(-2, 2), breaks = seq(-2, 2, 0.25)) +
     coord_cartesian(xlim = c(0, 2), ylim = c(-.25, 2)) +
     labs(title = "Group increase recovery",
-         subtitle = tag, x = "True Effect", y = "Estimated Effect") +
+         subtitle = tag, x = "True Effect", y = "Estimated Effect",
+         caption = ) +
     theme_bw() + 
     scale_color_manual(values = c("forestgreen", "darkred")) + 
     geom_hline(aes(yintercept = detect_thresh)) +
