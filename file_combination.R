@@ -48,9 +48,12 @@ for(i in 1:nrow(types_conditions)){
     out <- append(out, output)
   }
   
-  # #removes the initial NA
-  # out <- out[c(2:length(out))]
+  #removes the initial NA
+  out <- out[c(2:length(out))]
   
+  #discards down to 100 reps :(
+  out <- out[1:100]
+
   fname <- paste0(types_conditions[i, "types"], "_", length(out), "reps_", types_conditions[i, "conditions"], ".rds")
   saveRDS(out, paste0("combined/", fname))
   
