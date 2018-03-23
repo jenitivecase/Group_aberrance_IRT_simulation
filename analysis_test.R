@@ -63,19 +63,20 @@ for(file in 1:length(fit_files)){
   
   rhat <- fit_summary %>%
     mutate(Parameter = as.factor(gsub("\\[.*]", "", rownames(.)))) %>%
-    mutate(Param_type = gsub("[0-9]", "", Parameter)) %>%
+    mutate(Param_type = gsub("[0-9\\_]", "", Parameter)) %>%
     ggplot(aes(x = Parameter, y = Rhat, color = Param_type)) +
-    geom_jitter(height = 0, width = 0.4, show.legend = FALSE, aes(color = Param_type)) +
+    geom_jitter(height = 0, width = 0.4, aes(color = Param_type)) +
     geom_hline(aes(yintercept = 1.1), linetype = "dashed") +
     labs(y = expression(hat(italic(R))), title = "Convergence",
-         subtitle = tag) +
+         subtitle = tag, color = "Param Type") +
     theme_bw() +
     theme(axis.text.x = element_blank(),
           axis.ticks.x = element_blank(),
           panel.grid.major.x = element_blank(),
-          panel.grid.minor.x = element_blank())
+          panel.grid.minor.x = element_blank(), 
+          legend.position = "bottom")
   
-  ggsave(paste0("./results/convergence_", out_label, ".png"), plot = rhat)
+  ggsave(paste0("./results/convergence_", out_label, ".png"), plot = rhat, height = 7, width = 7)
   
   
   groups <- lapply(student_info, FUN = function(x) as.data.frame(x$groups)) 
@@ -129,7 +130,7 @@ for(file in 1:length(fit_files)){
     geom_vline(aes(xintercept = detect_thresh)) +
     theme(legend.position = "bottom") 
   
-  ggsave(paste0("./results/groupinc-recovery_", out_label, ".png"), plot = group_inc)
+  ggsave(paste0("./results/groupinc-recovery_", out_label, ".png"), plot = group_inc, height = 7, width = 7)
   
   
   classifications <- as.data.frame(table(true_group$Decision_spec))
@@ -148,7 +149,7 @@ for(file in 1:length(fit_files)){
          subtitle = tag) +
     theme_bw()
   
-  ggsave(paste0("./results/corr-recovery_", out_label, ".png"), plot = corr)
+  ggsave(paste0("./results/corr-recovery_", out_label, ".png"), plot = corr, height = 7, width = 7)
   
   est_a <- fit_summary[grep("^a", rownames(fit_summary)),] %>%
     as_data_frame() %>%
@@ -179,7 +180,7 @@ for(file in 1:length(fit_files)){
     theme_bw() +
     theme(legend.position = "bottom")
   
-  ggsave(paste0("./results/b-recovery_", out_label, ".png"), plot = b_recovery)
+  ggsave(paste0("./results/b-recovery_", out_label, ".png"), plot = b_recovery, height = 7, width = 7)
   
   a_recovery <- ggplot(items, aes(x = a_param, y = a_est, color = type)) +
     geom_point() +
@@ -191,7 +192,7 @@ for(file in 1:length(fit_files)){
     theme_bw() +
     theme(legend.position = "bottom")
   
-  ggsave(paste0("./results/a-recovery_", out_label, ".png"), plot = a_recovery)
+  ggsave(paste0("./results/a-recovery_", out_label, ".png"), plot = a_recovery, height = 7, width = 7)
   
   
   theta1_est <- fit_summary[grep("^theta1", rownames(fit_summary)),] %>%
@@ -224,5 +225,5 @@ for(file in 1:length(fit_files)){
     theme_bw() +
     theme(legend.position = "bottom")
   
-  ggsave(paste0("./results/theta-recovery_", out_label, ".png"), plot = theta_recovery)
+  ggsave(paste0("./results/theta-recovery_", out_label, ".png"), plot = theta_recovery, height = 7, width = 7)
 }
