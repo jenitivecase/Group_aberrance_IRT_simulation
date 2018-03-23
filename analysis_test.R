@@ -30,7 +30,7 @@ for(file in 1:length(fit_files)){
   
   item_info <- lapply(true_info, FUN = function(x) x <- x$item_info)
   
-
+  
   #fixed parameters
   n_items <- 60
   n_anchor <- 20
@@ -48,7 +48,7 @@ for(file in 1:length(fit_files)){
   theta_sd <- 1
   theta_increase <- 0.5
   theta_corr <- 0.7
-
+  
   #varying parameters  
   cheat_mean <- gsub("cheat-mean", "", info[4])
   cheat_mean <- as.numeric(gsub("-", ".", cheat_mean))
@@ -68,12 +68,14 @@ for(file in 1:length(fit_files)){
     geom_jitter(height = 0, width = 0.4, show.legend = FALSE, aes(color = Param_type)) +
     geom_hline(aes(yintercept = 1.1), linetype = "dashed") +
     labs(y = expression(hat(italic(R))), title = "Convergence",
-        subtitle = tag) +
+         subtitle = tag) +
     theme_bw() +
     theme(axis.text.x = element_blank(),
           axis.ticks.x = element_blank(),
           panel.grid.major.x = element_blank(),
           panel.grid.minor.x = element_blank())
+  
+  ggsave(paste0("./results/convergence_", out_label, ".png"), plot = rhat)
   
   
   groups <- lapply(student_info, FUN = function(x) as.data.frame(x$groups)) 
@@ -91,14 +93,16 @@ for(file in 1:length(fit_files)){
   true_group <- true_group %>%
     select(group, cheat, true_effect) %>%
     mutate(estimate = gr_summary) %>%
-    mutate(Decision = ifelse(cheat == 1 & estimate >= detect_thresh, "Correct Classification",
-                             ifelse(cheat == 1 & estimate < detect_thresh, "Incorrect Classification",
-                                    ifelse(cheat == 0 & estimate < detect_thresh, "Correct Classification",
-                                           ifelse(cheat == 0 & estimate >= detect_thresh , "Incorrect Classification", NA)))), NA) %>%
-    mutate(Decision_spec = ifelse(cheat == 1 & estimate >= detect_thresh, "True Positive", 
-                                  ifelse(cheat == 1 & estimate < detect_thresh, "False Negative", 
-                                         ifelse(cheat == 0 & estimate < detect_thresh, "True Negative", 
-                                                ifelse(cheat == 0 & estimate >= detect_thresh , "False Positive", NA)))), NA)
+    mutate(Decision = case_when((cheat == 1 & estimate >= detect_thresh) ~ "Correct Classification",
+                                (cheat == 1 & estimate < detect_thresh) ~ "Incorrect Classification",
+                                (cheat == 0 & estimate < detect_thresh) ~ "Correct Classification",
+                                (cheat == 0 & estimate >= detect_thresh) ~ "Incorrect Classification",
+                                TRUE ~ "NA")) %>%
+    mutate(Decision_spec = case_when(cheat == 1 & estimate >= detect_thresh ~ "True Positive", 
+                                     cheat == 1 & estimate < detect_thresh ~ "False Negative",
+                                     cheat == 0 & estimate < detect_thresh ~ "True Negative", 
+                                     cheat == 0 & estimate >= detect_thresh ~ "False Positive",
+                                     TRUE ~ "NA"))
   
   N <- nrow(true_group)
   TP_N <- nrow(filter(true_group, Decision_spec == "True Positive"))
@@ -116,22 +120,25 @@ for(file in 1:length(fit_files)){
     coord_cartesian(xlim = c(0, 2), ylim = c(-.25, 2)) +
     labs(title = "Group increase recovery",
          subtitle = tag, x = "True Effect", y = "Estimated Effect",
-         caption = paste0(paste0("False Pos Rate = ", FP_N/N), "; ",
-                          paste0("Power = ", TP_N/N), "; ",
-                          paste0("Precision = ", TP_N/(TP_N + FP_N)))) +
+         caption = paste0(paste0("False Pos Rate = ", round(FP_N/N, 3)), "; ",
+                          paste0("Power = ", round(TP_N/N, 3)), "; ",
+                          paste0("Precision = ", round(TP_N/(TP_N + FP_N), 3)))) +
     theme_bw() + 
     scale_color_manual(values = c("forestgreen", "darkred")) + 
     geom_hline(aes(yintercept = detect_thresh)) +
     geom_vline(aes(xintercept = detect_thresh)) +
     theme(legend.position = "bottom") 
-     
+  
+  ggsave(paste0("./results/groupinc-recovery_", out_label, ".png"), plot = group_inc)
+  
+  
   classifications <- as.data.frame(table(true_group$Decision_spec))
   
   write.csv(classifications, paste0("./results/classification-decisions_", out_label, ".csv"))
   
   
   est_cor <- fit_summary[grep("corr", rownames(fit_summary)), "mean"] 
-    
+  
   corr <- data_frame(true = rep(theta_corr, length(est_cor)), estimate = est_cor) %>%
     ggplot(aes(x = true, y = estimate)) +
     geom_point() +
@@ -141,7 +148,8 @@ for(file in 1:length(fit_files)){
          subtitle = tag) +
     theme_bw()
   
-
+  ggsave(paste0("./results/corr-recovery_", out_label, ".png"), plot = corr)
+  
   est_a <- fit_summary[grep("^a", rownames(fit_summary)),] %>%
     as_data_frame() %>%
     pull(mean)
@@ -160,7 +168,7 @@ for(file in 1:length(fit_files)){
   
   items <- bind_rows(items) %>%
     mutate(b_est = est_b, a_est = est_a)
-    
+  
   b_recovery <- ggplot(items, aes(x = b_param, y = b_est, color = type)) +
     geom_point() +
     scale_x_continuous(limits = c(-2.0, 3.0), breaks = seq(-3, 3, 0.5)) +
@@ -170,6 +178,8 @@ for(file in 1:length(fit_files)){
     scale_color_discrete(name = "Item Type") +
     theme_bw() +
     theme(legend.position = "bottom")
+  
+  ggsave(paste0("./results/b-recovery_", out_label, ".png"), plot = b_recovery)
   
   a_recovery <- ggplot(items, aes(x = a_param, y = a_est, color = type)) +
     geom_point() +
@@ -181,7 +191,9 @@ for(file in 1:length(fit_files)){
     theme_bw() +
     theme(legend.position = "bottom")
   
-
+  ggsave(paste0("./results/a-recovery_", out_label, ".png"), plot = a_recovery)
+  
+  
   theta1_est <- fit_summary[grep("^theta1", rownames(fit_summary)),] %>%
     as_data_frame() %>%
     pull(mean)
@@ -212,9 +224,5 @@ for(file in 1:length(fit_files)){
     theme_bw() +
     theme(legend.position = "bottom")
   
-  all_plots <- list(rhat, group_inc, corr, b_recovery, a_recovery, theta_recovery)
-  
-  pdf(paste0("./results/model-results", out_label, ".pdf"))
-  walk(all_plots, print)
-  dev.off()
+  ggsave(paste0("./results/theta-recovery_", out_label, ".png"), plot = theta_recovery)
 }
