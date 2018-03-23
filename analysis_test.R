@@ -7,6 +7,8 @@ library(tidyverse)
 library(rstan)
 library(ggplot2)
 
+if(!dir.exists("./results")){ dir.create("./results") }
+
 fit_files <- grep("fit", list.files(), value = TRUE)
 true_files <- grep("true", list.files(), value = TRUE)
 
@@ -63,11 +65,15 @@ for(file in 1:length(fit_files)){
     mutate(Parameter = as.factor(gsub("\\[.*]", "", rownames(.)))) %>%
     mutate(Param_type = gsub("[0-9]", "", Parameter)) %>%
     ggplot(aes(x = Parameter, y = Rhat, color = Param_type)) +
-    geom_jitter(height = 0, width = 0.4, show.legend = FALSE) +
+    geom_jitter(height = 0, width = 0.4, show.legend = FALSE, aes(color = Param_type)) +
     geom_hline(aes(yintercept = 1.1), linetype = "dashed") +
     labs(y = expression(hat(italic(R))), title = "Convergence",
         subtitle = tag) +
-    theme_bw() 
+    theme_bw() +
+    theme(axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank())
   
   
   groups <- lapply(student_info, FUN = function(x) as.data.frame(x$groups)) 
@@ -110,19 +116,18 @@ for(file in 1:length(fit_files)){
     coord_cartesian(xlim = c(0, 2), ylim = c(-.25, 2)) +
     labs(title = "Group increase recovery",
          subtitle = tag, x = "True Effect", y = "Estimated Effect",
-         caption = ) +
+         caption = paste0(paste0("False Pos Rate = ", FP_N/N), "; ",
+                          paste0("Power = ", TP_N/N), "; ",
+                          paste0("Precision = ", TP_N/(TP_N + FP_N)))) +
     theme_bw() + 
     scale_color_manual(values = c("forestgreen", "darkred")) + 
     geom_hline(aes(yintercept = detect_thresh)) +
     geom_vline(aes(xintercept = detect_thresh)) +
     theme(legend.position = "bottom") 
-  
-  ggsave(filename = paste0("classification-plot_", out_label, ".png"), plot = group_inc,
-         width = 6.5, height = 9)
      
   classifications <- as.data.frame(table(true_group$Decision_spec))
   
-  write.csv(classifications, paste0("classification-decisions_", out_label, ".csv"))
+  write.csv(classifications, paste0("./results/classification-decisions_", out_label, ".csv"))
   
   
   est_cor <- fit_summary[grep("corr", rownames(fit_summary)), "mean"] 
@@ -209,7 +214,7 @@ for(file in 1:length(fit_files)){
   
   all_plots <- list(rhat, group_inc, corr, b_recovery, a_recovery, theta_recovery)
   
-  pdf(paste0("model-results_cheat-inc", cheat_mean, "_pct-cheat", pct_cheat, "_", date, ".pdf"))
+  pdf(paste0("./results/model-results", out_label, ".pdf"))
   walk(all_plots, print)
   dev.off()
 }
