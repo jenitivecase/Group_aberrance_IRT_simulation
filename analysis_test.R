@@ -12,7 +12,7 @@ if(!dir.exists("./results")){ dir.create("./results") }
 fit_files <- grep("fit", list.files(), value = TRUE)
 true_files <- grep("true", list.files(), value = TRUE)
 
-detect_thresh <- 1.5
+thresholds <- c(1, 1.5, 2)
 
 for(file in 1:length(fit_files)){
   
@@ -59,7 +59,7 @@ for(file in 1:length(fit_files)){
   ### MAKING GRAPHS ###
   
   tag <- paste0("For ", cheat_mean, " cheating effect and ", pct_cheat, "% of groups cheating")
-  out_label <- paste0(detect_thresh, "detect-thresh_", cheat_mean, "_cheat-mean", pct_cheat, "_pct-cheat_", date)
+  out_label <- paste0(cheat_mean, "_cheat-mean", pct_cheat, "_pct-cheat_", date)
   
   rhat <- fit_summary %>%
     mutate(Parameter = as.factor(gsub("\\[.*]", "", rownames(.)))) %>%
@@ -82,60 +82,67 @@ for(file in 1:length(fit_files)){
   groups <- lapply(student_info, FUN = function(x) as.data.frame(x$groups)) 
   groups <- do.call(rbind, groups)
   
-  true_group <- groups %>%
-    mutate(true_effect = group_inc + cheat_eff)
-  
-  gr_summary <- fit_summary[grep("group_inc", rownames(fit_summary)),] %>%
-    as_data_frame() %>%
-    pull(mean)
-  
-  perfect <- data_frame(x = c(-100, 100), y = c(-100, 100))
-  
-  true_group <- true_group %>%
-    select(group, cheat, true_effect) %>%
-    mutate(estimate = gr_summary) %>%
-    mutate(Decision = case_when((cheat == 1 & estimate >= detect_thresh) ~ "Correct Classification",
-                                (cheat == 1 & estimate < detect_thresh) ~ "Incorrect Classification",
-                                (cheat == 0 & estimate < detect_thresh) ~ "Correct Classification",
-                                (cheat == 0 & estimate >= detect_thresh) ~ "Incorrect Classification",
-                                TRUE ~ "NA")) %>%
-    mutate(Decision_spec = case_when(cheat == 1 & estimate >= detect_thresh ~ "True Positive", 
-                                     cheat == 1 & estimate < detect_thresh ~ "False Negative",
-                                     cheat == 0 & estimate < detect_thresh ~ "True Negative", 
-                                     cheat == 0 & estimate >= detect_thresh ~ "False Positive",
-                                     TRUE ~ "NA"))
-  
-  N <- nrow(true_group)
-  TP_N <- nrow(filter(true_group, Decision_spec == "True Positive"))
-  FP_N <- nrow(filter(true_group, Decision_spec == "False Positive"))
-  
-  print(out_label)
-  print(paste0("False Pos Rate = ", FP_N/N))
-  print(paste0("Power = ", TP_N/N))
-  print(paste0("Precision = ", TP_N/(TP_N + FP_N)))
-  
-  group_inc <- ggplot(true_group, aes(x = true_effect, y = estimate, color = Decision)) +
-    geom_point() +
-    scale_x_continuous(limits = c(-2, 2), breaks = seq(-2, 2, 0.25)) +
-    scale_y_continuous(limits = c(-2, 2), breaks = seq(-2, 2, 0.25)) +
-    coord_cartesian(xlim = c(0, 2), ylim = c(-.25, 2)) +
-    labs(title = "Group increase recovery",
-         subtitle = tag, x = "True Effect", y = "Estimated Effect",
-         caption = paste0(paste0("False Pos Rate = ", round(FP_N/N, 3)), "; ",
-                          paste0("Power = ", round(TP_N/N, 3)), "; ",
-                          paste0("Precision = ", round(TP_N/(TP_N + FP_N), 3)))) +
-    theme_bw() + 
-    scale_color_manual(values = c("forestgreen", "darkred")) + 
-    geom_hline(aes(yintercept = detect_thresh)) +
-    geom_vline(aes(xintercept = detect_thresh)) +
-    theme(legend.position = "bottom") 
-  
-  ggsave(paste0("./results/groupinc-recovery_", out_label, ".png"), plot = group_inc, height = 7, width = 7)
-  
-  
-  classifications <- as.data.frame(table(true_group$Decision_spec))
-  
-  write.csv(classifications, paste0("./results/classification-decisions_", out_label, ".csv"))
+  for(detect_thresh in thresholds){
+    
+    out_thresh_label <- paste0(detect_thresh, "detect-thresh_", cheat_mean, "_cheat-mean", pct_cheat, "_pct-cheat_", date)
+    
+    true_group <- groups %>%
+      mutate(true_effect = group_inc + cheat_eff)
+    
+    gr_summary <- fit_summary[grep("group_inc", rownames(fit_summary)),] %>%
+      as_data_frame() %>%
+      pull(mean)
+    
+    perfect <- data_frame(x = c(-100, 100), y = c(-100, 100))
+    
+    true_group <- true_group %>%
+      select(group, cheat, true_effect) %>%
+      mutate(estimate = gr_summary) %>%
+      mutate(Decision = case_when((cheat == 1 & estimate >= detect_thresh) ~ "Correct Classification",
+                                  (cheat == 1 & estimate < detect_thresh) ~ "Incorrect Classification",
+                                  (cheat == 0 & estimate < detect_thresh) ~ "Correct Classification",
+                                  (cheat == 0 & estimate >= detect_thresh) ~ "Incorrect Classification",
+                                  TRUE ~ "NA")) %>%
+      mutate(Decision_spec = case_when(cheat == 1 & estimate >= detect_thresh ~ "True Positive", 
+                                       cheat == 1 & estimate < detect_thresh ~ "False Negative",
+                                       cheat == 0 & estimate < detect_thresh ~ "True Negative", 
+                                       cheat == 0 & estimate >= detect_thresh ~ "False Positive",
+                                       TRUE ~ "NA"))
+    
+    N <- nrow(true_group)
+    TP_N <- nrow(filter(true_group, Decision_spec == "True Positive"))
+    FP_N <- nrow(filter(true_group, Decision_spec == "False Positive"))
+    
+    print(out_thresh_label)
+    print(paste0("False Pos Rate = ", FP_N/N))
+    print(paste0("Power = ", TP_N/N))
+    print(paste0("Precision = ", TP_N/(TP_N + FP_N)))
+    
+    group_inc <- ggplot(true_group, aes(x = true_effect, y = estimate, color = Decision)) +
+      geom_point() +
+      scale_x_continuous(limits = c(-2, 2), breaks = seq(-2, 2, 0.25)) +
+      scale_y_continuous(limits = c(-2, 2), breaks = seq(-2, 2, 0.25)) +
+      coord_cartesian(xlim = c(0, 2), ylim = c(-.25, 2)) +
+      labs(title = "Group increase recovery",
+           subtitle = paste0(tag, ", ", detect_thresh, 
+                             " effect threshold"), 
+           x = "True Effect", y = "Estimated Effect",
+           caption = paste0(paste0("False Pos Rate = ", round(FP_N/N, 3)), "; ",
+                            paste0("Power = ", round(TP_N/N, 3)), "; ",
+                            paste0("Precision = ", round(TP_N/(TP_N + FP_N), 3)))) +
+      theme_bw() + 
+      scale_color_manual(values = c("forestgreen", "darkred")) + 
+      geom_hline(aes(yintercept = detect_thresh)) +
+      geom_vline(aes(xintercept = detect_thresh)) +
+      theme(legend.position = "bottom") 
+    
+    ggsave(paste0("./results/groupinc-recovery_", out_thresh_label, ".png"), plot = group_inc, height = 7, width = 7)
+    
+    
+    classifications <- as.data.frame(table(true_group$Decision_spec))
+    
+    write.csv(classifications, paste0("./results/classification-decisions_", out_thresh_label, ".csv"))
+  }
   
   
   est_cor <- fit_summary[grep("corr", rownames(fit_summary)), "mean"] 
@@ -227,3 +234,5 @@ for(file in 1:length(fit_files)){
   
   ggsave(paste0("./results/theta-recovery_", out_label, ".png"), plot = theta_recovery, height = 7, width = 7)
 }
+
+
