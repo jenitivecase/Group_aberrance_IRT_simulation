@@ -31,10 +31,11 @@ types <- unique(files$type)
 types_conditions <- expand.grid(conditions, types)
 names(types_conditions) <- c("conditions", "types")
 types_conditions <- apply(types_conditions, 2, as.character)
+uniques <- unique(types_conditions[, "conditions"])
 
 if(!dir.exists("combined")){dir.create("combined")}
 
-for(i in 1:nrow(types_conditions)){
+for(i in 1:length(uniques)){
   condition_matches <- grep(types_conditions[i, "conditions"], files$file)
   type_matches <- grep(paste0(types_conditions[i, "types"]), files$file)
   indices <- condition_matches[which(condition_matches %in% type_matches)]
