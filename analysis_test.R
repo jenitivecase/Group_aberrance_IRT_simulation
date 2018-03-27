@@ -148,12 +148,13 @@ for(file in 1:length(fit_files)){
   est_cor <- fit_summary[grep("corr", rownames(fit_summary)), "mean"] 
   
   corr <- data_frame(true = rep(theta_corr, length(est_cor)), estimate = est_cor) %>%
-    ggplot(aes(x = true, y = estimate)) +
-    geom_point() +
+    ggplot(aes(x = estimate)) +
+    geom_histogram(binwidth = 0.01) +
+    geom_vline(xintercept = theta_corr) +
+    geom_vline(xintercept = mean(est_cor), linetype = "dotted") +
     scale_x_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.1), minor_breaks = NULL) +
-    scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.1), minor_breaks = NULL) +
     labs(title = "Correlation recovery",
-         subtitle = tag) +
+         subtitle = paste0(tag, "; \nMean est corr = ", round(mean(est_cor), 3))) +
     theme_bw()
   
   ggsave(paste0("./results/corr-recovery_", out_label, ".png"), plot = corr, height = 7, width = 7)
