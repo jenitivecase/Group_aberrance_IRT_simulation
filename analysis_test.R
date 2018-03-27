@@ -120,9 +120,9 @@ for(file in 1:length(fit_files)){
     
     group_inc <- ggplot(true_group, aes(x = true_effect, y = estimate, color = Decision)) +
       geom_point() +
-      scale_x_continuous(limits = c(-2, 2), breaks = seq(-2, 2, 0.25)) +
-      scale_y_continuous(limits = c(-2, 2), breaks = seq(-2, 2, 0.25)) +
-      coord_cartesian(xlim = c(0, 2), ylim = c(-.25, 2)) +
+      scale_x_continuous(limits = c(-2, 3), breaks = seq(-2, 3, 0.5), minor_breaks = NULL) +
+      scale_y_continuous(limits = c(-2, 3), breaks = seq(-2, 3, 0.5), minor_breaks = NULL) +
+      coord_cartesian(xlim = c(-.5, 3), ylim = c(-.5, 3)) +
       labs(title = "Group increase recovery",
            subtitle = paste0(tag, ", ", detect_thresh, 
                              " effect threshold"), 
@@ -150,8 +150,8 @@ for(file in 1:length(fit_files)){
   corr <- data_frame(true = rep(theta_corr, length(est_cor)), estimate = est_cor) %>%
     ggplot(aes(x = true, y = estimate)) +
     geom_point() +
-    scale_x_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.1)) +
-    scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.1)) +
+    scale_x_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.1), minor_breaks = NULL) +
+    scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.1), minor_breaks = NULL) +
     labs(title = "Correlation recovery",
          subtitle = tag) +
     theme_bw()
@@ -179,10 +179,10 @@ for(file in 1:length(fit_files)){
   
   b_recovery <- ggplot(items, aes(x = b_param, y = b_est, color = type)) +
     geom_point() +
-    scale_x_continuous(limits = c(-2.0, 3.0), breaks = seq(-3, 3, 0.5)) +
-    scale_y_continuous(limits = c(-2.0, 3.0), breaks = seq(-3, 3, 0.5)) +
+    scale_x_continuous(limits = c(-3, 3.5), breaks = seq(-3, 3.5, 0.5), minor_breaks = NULL) +
+    scale_y_continuous(limits = c(-3, 3.5), breaks = seq(-3, 3.5, 0.5), minor_breaks = NULL) +
     labs(title = "b-parameter recovery", x = "True", y = "Estimated",
-         subtitle = tag) +
+         subtitle = paste0(tag, "; r = ", round(cor(items$b_est, items$b_param), 3))) +
     scale_color_discrete(name = "Item Type") +
     theme_bw() +
     theme(legend.position = "bottom")
@@ -191,10 +191,10 @@ for(file in 1:length(fit_files)){
   
   a_recovery <- ggplot(items, aes(x = a_param, y = a_est, color = type)) +
     geom_point() +
-    scale_x_continuous(limits = c(0, 3.5), breaks = seq(0, 4, 0.5)) +
-    scale_y_continuous(limits = c(0, 3.5), breaks = seq(0, 4, 0.5)) +
+    scale_x_continuous(limits = c(0, 3.5), breaks = seq(0, 4, 0.5), minor_breaks = NULL) +
+    scale_y_continuous(limits = c(0, 3.5), breaks = seq(0, 4, 0.5), minor_breaks = NULL) +
     labs(title = "a-parameter recovery", x = "True", y = "Estimated",
-         subtitle = tag) +
+         subtitle = paste0(tag, "; r = ", round(cor(items$a_est, items$a_param), 3))) +
     scale_color_discrete(name = "Item Type") +
     theme_bw() +
     theme(legend.position = "bottom")
@@ -227,7 +227,7 @@ for(file in 1:length(fit_files)){
     scale_x_continuous(breaks = seq(-4, 4, 1)) +
     scale_y_continuous(breaks = seq(-4, 4, 1)) +
     labs(x = "True", y = "Estimated", title = "Theta recovery",
-         subtitle = tag) +
+         subtitle = paste0(tag, "; r = ", round(cor(theta$theta1, theta$theta2), 3))) +
     scale_color_discrete(name = "Year") +
     theme_bw() +
     theme(legend.position = "bottom")
