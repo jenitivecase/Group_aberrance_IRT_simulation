@@ -149,10 +149,10 @@ for(file in 1:length(fit_files)){
     
   }
   
-  bias <- data.frame("Cheat_bias" = mean(filter(true_group, cheat == 1)$bias),
+  groupinc_bias <- data.frame("Cheat_bias" = mean(filter(true_group, cheat == 1)$bias),
                      "Regular_bias" = mean(filter(true_group, cheat == 0)$bias))
   
-  write.csv(bias, paste0("./results/bias_", out_label, ".csv"))
+  write.csv(groupinc_bias, paste0("./results/groupinc_bias_", out_label, ".csv"))
   
   est_cor <- fit_summary[grep("corr", rownames(fit_summary)), "mean"] 
   
@@ -228,8 +228,14 @@ for(file in 1:length(fit_files)){
   })
   theta <- theta %>%
     bind_rows() %>%
-    mutate(est1 = theta1_est, est2 = theta2_est)
+    mutate(est1 = theta1_est, est2 = theta2_est) %>%
+    mutate(yr1bias = est1 - theta1, 
+           yr2bias = est2 - theta2)
   
+  theta_bias <- data.frame("Yr1_bias" = mean(theta$yr1bias),
+                           "Yr2_bias" = mean(theta$yr2bias))
+  
+  write.csv(theta_bias, paste0("./results/theta_bias_", out_label, ".csv"))
   
   theta_recovery <- ggplot(theta) +
     geom_point(aes(x = theta1, y = est1, color = "Year 1")) +
