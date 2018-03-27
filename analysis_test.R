@@ -82,22 +82,25 @@ for(file in 1:length(fit_files)){
   groups <- lapply(student_info, FUN = function(x) as.data.frame(x$groups)) 
   groups <- do.call(rbind, groups)
   
+  true_group <- groups %>%
+    mutate(true_effect = group_inc + cheat_eff)
+  
+  gr_summary <- fit_summary[grep("group_inc", rownames(fit_summary)),] %>%
+    as_data_frame() %>%
+    pull(mean)
+  
+  perfect <- data_frame(x = c(-100, 100), y = c(-100, 100))
+  
+  true_group <- true_group %>%
+    select(group, cheat, true_effect) %>%
+    mutate(estimate = gr_summary) %>% 
+    mutate(bias = estimate -true_effect)
+  
   for(detect_thresh in thresholds){
     
     out_thresh_label <- paste0(detect_thresh, "detect-thresh_", cheat_mean, "_cheat-mean", pct_cheat, "_pct-cheat_", date)
     
-    true_group <- groups %>%
-      mutate(true_effect = group_inc + cheat_eff)
-    
-    gr_summary <- fit_summary[grep("group_inc", rownames(fit_summary)),] %>%
-      as_data_frame() %>%
-      pull(mean)
-    
-    perfect <- data_frame(x = c(-100, 100), y = c(-100, 100))
-    
-    true_group <- true_group %>%
-      select(group, cheat, true_effect) %>%
-      mutate(estimate = gr_summary) %>%
+     true_group <- true_group %>%
       mutate(Decision = case_when((cheat == 1 & estimate >= detect_thresh) ~ "Correct Classification",
                                   (cheat == 1 & estimate < detect_thresh) ~ "Incorrect Classification",
                                   (cheat == 0 & estimate < detect_thresh) ~ "Correct Classification",
@@ -132,18 +135,23 @@ for(file in 1:length(fit_files)){
                             paste0("Precision = ", round(TP_N/(TP_N + FP_N), 3)))) +
       theme_bw() + 
       scale_color_manual(values = c("forestgreen", "darkred")) + 
-      geom_hline(aes(yintercept = detect_thresh)) +
-      geom_vline(aes(xintercept = detect_thresh)) +
+      geom_hline(aes(yintercept = detect_thresh), linetype = "dotted") +
       theme(legend.position = "bottom") 
     
     ggsave(paste0("./results/groupinc-recovery_", out_thresh_label, ".png"), plot = group_inc, height = 7, width = 7)
     
     
-    classifications <- as.data.frame(table(true_group$Decision_spec))
+    classifications <- as.data.frame(table(true_group$Decision_spec)) %>%
+      mutate(Pct = Freq/sum(Freq)) 
     
     write.csv(classifications, paste0("./results/classification-decisions_", out_thresh_label, ".csv"))
+    
   }
   
+  bias <- data.frame("Cheat_bias" = mean(filter(true_group, cheat == 1)$bias),
+                     "Regular_bias" = mean(filter(true_group, cheat == 0)$bias))
+  
+  write.csv(bias, paste0("./results/bias_", out_label, ".csv"))
   
   est_cor <- fit_summary[grep("corr", rownames(fit_summary)), "mean"] 
   
