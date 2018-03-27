@@ -115,10 +115,11 @@ for(file in 1:length(fit_files)){
     N <- nrow(true_group)
     TP_N <- nrow(filter(true_group, Decision_spec == "True Positive"))
     FP_N <- nrow(filter(true_group, Decision_spec == "False Positive"))
+    FN_N <- nrow(filter(true_group, Decision_spec == "False Negative"))
     
     print(out_thresh_label)
-    print(paste0("False Pos Rate = ", FP_N/N))
-    print(paste0("Power = ", TP_N/N))
+    print(paste0("False Pos Rate = ", FP_N/(TP_N + FP_N)))
+    print(paste0("Power = ", TP_N/(TP_N + FN_N)))
     print(paste0("Precision = ", TP_N/(TP_N + FP_N)))
     
     group_inc <- ggplot(true_group, aes(x = true_effect, y = estimate, color = Decision)) +
@@ -130,8 +131,8 @@ for(file in 1:length(fit_files)){
            subtitle = paste0(tag, ", ", detect_thresh, 
                              " effect threshold"), 
            x = "True Effect", y = "Estimated Effect",
-           caption = paste0(paste0("False Pos Rate = ", round(FP_N/N, 3)), "; ",
-                            paste0("Power = ", round(TP_N/N, 3)), "; ",
+           caption = paste0(paste0("False Pos Rate = ", round(FP_N/(TP_N + FP_N), 3)), "; ",
+                            paste0("Power = ", round(TP_N/(TP_N + FN_N), 3)), "; ",
                             paste0("Precision = ", round(TP_N/(TP_N + FP_N), 3)))) +
       theme_bw() + 
       scale_color_manual(values = c("forestgreen", "darkred")) + 
